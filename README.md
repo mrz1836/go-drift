@@ -49,7 +49,7 @@ View the generated [documentation](https://pkg.go.dev/github.com/mrz1836/go-drif
         - [x] Retrieving Contacts
         - [ ] Deleting a Contact
         - [ ] Unsubscribe Contacts from Emails
-        - [ ] Posting Timeline Events
+        - [x] Posting Timeline Events
         - [ ] Listing Custom Attributes
     - [ ] Users API
         - [ ] Retrieving User
