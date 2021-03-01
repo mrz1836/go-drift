@@ -1,13 +1,13 @@
 # go-drift
 > The unofficial golang implementation for the [Drift API](https://devdocs.drift.com/docs/using-drift-apis)
 
-[![Release](https://img.shields.io/github/release-pre/mrz1836/go-drift.svg?logo=github&style=flat&v=1)](https://github.com/mrz1836/go-drift/releases)
-[![Build Status](https://img.shields.io/github/workflow/status/mrz1836/go-drift/run-go-tests?logo=github&v=3)](https://github.com/mrz1836/go-drift/actions)
-[![Report](https://goreportcard.com/badge/github.com/mrz1836/go-drift?style=flat&v=2)](https://goreportcard.com/report/github.com/mrz1836/go-drift)
-[![codecov](https://codecov.io/gh/mrz1836/go-drift/branch/master/graph/badge.svg)](https://codecov.io/gh/mrz1836/go-drift)
-[![Go](https://img.shields.io/github/go-mod/go-version/mrz1836/go-drift)](https://golang.org/)
-[![Sponsor](https://img.shields.io/badge/sponsor-MrZ-181717.svg?logo=github&style=flat&v=3)](https://github.com/sponsors/mrz1836)
-[![Donate](https://img.shields.io/badge/donate-bitcoin-ff9900.svg?logo=bitcoin&style=flat)](https://mrz1818.com/?tab=tips&utm_source=github&utm_medium=sponsor-link&utm_campaign=go-drift&utm_term=go-drift&utm_content=go-drift)
+[![Release](https://img.shields.io/github/release-pre/mrz1836/go-drift.svg?logo=github&style=flat&v=5)](https://github.com/mrz1836/go-drift/releases)
+[![Build Status](https://img.shields.io/github/workflow/status/mrz1836/go-drift/run-go-tests?logo=github&v=5)](https://github.com/mrz1836/go-drift/actions)
+[![Report](https://goreportcard.com/badge/github.com/mrz1836/go-drift?style=flat&v=5)](https://goreportcard.com/report/github.com/mrz1836/go-drift)
+[![codecov](https://codecov.io/gh/mrz1836/go-drift/branch/master/graph/badge.svg?v=5)](https://codecov.io/gh/mrz1836/go-drift)
+[![Go](https://img.shields.io/github/go-mod/go-version/mrz1836/go-drift?v=5)](https://golang.org/)
+[![Sponsor](https://img.shields.io/badge/sponsor-MrZ-181717.svg?logo=github&style=flat&v=5)](https://github.com/sponsors/mrz1836)
+[![Donate](https://img.shields.io/badge/donate-bitcoin-ff9900.svg?logo=bitcoin&style=flat&v=5)](https://mrz1818.com/?tab=tips&utm_source=github&utm_medium=sponsor-link&utm_campaign=go-drift&utm_term=go-drift&utm_content=go-drift)
 
 <br/>
 
@@ -36,7 +36,7 @@ go get -u github.com/mrz1836/go-drift
 ## Documentation
 View the generated [documentation](https://pkg.go.dev/github.com/mrz1836/go-drift)
 
-[![GoDoc](https://godoc.org/github.com/mrz1836/go-drift?status.svg&style=flat)](https://pkg.go.dev/github.com/mrz1836/go-drift)
+[![GoDoc](https://godoc.org/github.com/mrz1836/go-drift?status.svg&style=flat&v=5)](https://pkg.go.dev/github.com/mrz1836/go-drift)
 
 ### Features
 - [Client](client.go) is completely configurable
@@ -193,4 +193,4 @@ or by making a [**bitcoin donation**](https://mrz1818.com/?tab=tips&utm_source=g
 
 ## License
 
-![License](https://img.shields.io/github/license/mrz1836/go-drift.svg?style=flat)
+![License](https://img.shields.io/github/license/mrz1836/go-drift.svg?style=flat&v=5)
