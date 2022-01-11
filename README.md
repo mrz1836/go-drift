@@ -136,7 +136,7 @@ vet                  Run the Go vet application
 
 ## Examples & Tests
 All unit tests and [examples](examples) run via [Github Actions](https://github.com/mrz1836/go-drift/actions) and
-uses [Go version 1.15.x](https://golang.org/doc/go1.15). View the [configuration file](.github/workflows/run-tests.yml).
+uses [Go version 1.16.x](https://golang.org/doc/go1.16). View the [configuration file](.github/workflows/run-tests.yml).
 
 Run all tests (including integration tests)
 ```shell script
@@ -170,8 +170,8 @@ View the [examples](examples)
 
 ## Maintainers
 | [<img src="https://github.com/mrz1836.png" height="50" alt="MrZ" />](https://github.com/mrz1836) |
-|:---:|
-| [MrZ](https://github.com/mrz1836) |
+|:------------------------------------------------------------------------------------------------:|
+|                                [MrZ](https://github.com/mrz1836)                                 |
               
 <br/>
 
@@ -193,4 +193,4 @@ or by making a [**bitcoin donation**](https://mrz1818.com/?tab=tips&utm_source=g
 
 ## License
 
-![License](https://img.shields.io/github/license/mrz1836/go-drift.svg?style=flat&v=5)
+[![License](https://img.shields.io/github/license/mrz1836/go-drift.svg?style=flat&v=5)](LICENSE)
