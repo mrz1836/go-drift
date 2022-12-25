@@ -2,7 +2,7 @@
 > The unofficial golang implementation for the [Drift API](https://devdocs.drift.com/docs/using-drift-apis)
 
 [![Release](https://img.shields.io/github/release-pre/mrz1836/go-drift.svg?logo=github&style=flat&v=5)](https://github.com/mrz1836/go-drift/releases)
-[![Build Status](https://img.shields.io/github/workflow/status/mrz1836/go-drift/run-go-tests?logo=github&v=5)](https://github.com/mrz1836/go-drift/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/mrz1836/go-drift/run-tests.yml?branch=master&logo=github&v=5)](https://github.com/mrz1836/go-drift/actions)
 [![Report](https://goreportcard.com/badge/github.com/mrz1836/go-drift?style=flat&v=5)](https://goreportcard.com/report/github.com/mrz1836/go-drift)
 [![codecov](https://codecov.io/gh/mrz1836/go-drift/branch/master/graph/badge.svg?v=5)](https://codecov.io/gh/mrz1836/go-drift)
 [![Go](https://img.shields.io/github/go-mod/go-version/mrz1836/go-drift?v=5)](https://golang.org/)
