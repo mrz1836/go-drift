@@ -29,8 +29,8 @@ type httpPayload struct {
 
 // httpRequest is a generic request wrapper that can be used without constraints
 func httpRequest(ctx context.Context, client *Client,
-	payload *httpPayload) (response *RequestResponse) {
-
+	payload *httpPayload,
+) (response *RequestResponse) {
 	// Set reader
 	var bodyReader io.Reader
 
@@ -52,7 +52,7 @@ func httpRequest(ctx context.Context, client *Client,
 	if request, response.Error = http.NewRequestWithContext(
 		ctx, payload.Method, payload.URL, bodyReader,
 	); response.Error != nil {
-		return
+		return response
 	}
 
 	// Change the header (user agent is in case they block default Go user agents)
@@ -74,7 +74,7 @@ func httpRequest(ctx context.Context, client *Client,
 		if resp != nil {
 			response.StatusCode = resp.StatusCode
 		}
-		return
+		return response
 	}
 
 	// Close the response body
@@ -104,11 +104,11 @@ func httpRequest(ctx context.Context, client *Client,
 				resp.StatusCode, payload.ExpectedStatus,
 			)
 		}
-		return
+		return response
 	}
 
 	// Read the body
 	response.BodyContents, response.Error = ioutil.ReadAll(resp.Body)
 
-	return
+	return response
 }

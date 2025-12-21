@@ -23,12 +23,12 @@ type TimelineResponse struct {
 // CreateTimelineEvent will create a new timeline event
 // specs: https://devdocs.drift.com/docs/posting-timeline-events
 func (c *Client) CreateTimelineEvent(ctx context.Context,
-	event *TimelineEvent) (response *TimelineResponse, err error) {
-
+	event *TimelineEvent,
+) (response *TimelineResponse, err error) {
 	// Marshall the attributes
 	var data []byte
 	if data, err = json.Marshal(event); err != nil {
-		return
+		return response, err
 	}
 
 	// Create and fire the request
@@ -42,10 +42,10 @@ func (c *Client) CreateTimelineEvent(ctx context.Context,
 		},
 	); resp.Error != nil {
 		err = resp.Error
-		return
+		return response, err
 	}
 
 	// Parse the request
 	err = json.Unmarshal(resp.BodyContents, &response)
-	return
+	return response, err
 }

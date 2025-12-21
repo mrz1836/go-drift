@@ -10,7 +10,6 @@ import (
 )
 
 func main() {
-
 	// Create a new client
 	client := drift.NewClient(
 		os.Getenv("TEST_DRIFT_OAUTH_TOKEN"), nil, nil,

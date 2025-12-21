@@ -10,19 +10,17 @@ import (
 // CreateContact will fire the HTTP request to create a new contact
 // specs: https://devdocs.drift.com/docs/creating-a-contact
 func (c *Client) CreateContact(ctx context.Context, attributes *ContactFields) (contact *Contact, err error) {
-
 	// Create and fire the request
 	var response *RequestResponse
 	if response, err = c.CreateContactRaw(
 		ctx, attributes,
 	); err != nil {
-		return
+		return contact, err
 	}
 
 	// Parse the request
 	err = json.Unmarshal(response.BodyContents, &contact)
-	return
-
+	return contact, err
 }
 
 // CreateContactRaw will create a contact using custom attributes
@@ -33,12 +31,12 @@ func (c *Client) CreateContactRaw(ctx context.Context, attributes interface{}) (
 
 // createOrUpdateContact will create or update a contact
 func (c *Client) createOrUpdateContact(ctx context.Context, contactID uint64,
-	attributes interface{}) (response *RequestResponse, err error) {
-
+	attributes interface{},
+) (response *RequestResponse, err error) {
 	// Marshall the attributes
 	var data []byte
 	if data, err = json.Marshal(attributes); err != nil {
-		return
+		return response, err
 	}
 
 	// Set the method based on the type of request
@@ -60,5 +58,5 @@ func (c *Client) createOrUpdateContact(ctx context.Context, contactID uint64,
 	); response.Error != nil {
 		err = response.Error
 	}
-	return
+	return response, err
 }

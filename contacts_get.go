@@ -17,11 +17,10 @@ type ContactQuery struct {
 
 // BuildURL will build a url depending on our query params
 func (q *ContactQuery) BuildURL() (queryURL string, err error) {
-
 	// Make sure we have something to search for
 	if len(q.ID) == 0 && len(q.Email) == 0 && len(q.ExternalID) == 0 {
 		err = fmt.Errorf("contact id, email or external id is required")
-		return
+		return queryURL, err
 	}
 
 	// Set a default limit if no limit is given
@@ -37,7 +36,7 @@ func (q *ContactQuery) BuildURL() (queryURL string, err error) {
 	} else if len(q.ExternalID) > 0 { // Next is external id
 		queryURL = fmt.Sprintf("%s/contacts?idType=external&id=%s&limit=%d", apiEndpoint, q.ExternalID, q.Limit)
 	}
-	return
+	return queryURL, err
 }
 
 // HasMultipleResults will return true if the query will produce multiple contacts
@@ -48,13 +47,12 @@ func (q *ContactQuery) HasMultipleResults() bool {
 // GetContacts will get the contact data, but then parse into a standard contact (no custom attributes)
 // specs: https://devdocs.drift.com/docs/retrieving-contact
 func (c *Client) GetContacts(ctx context.Context, query *ContactQuery) (contacts *Contacts, err error) {
-
 	// Create and fire the request
 	var response *RequestResponse
 	if response, err = c.GetContactsRaw(
 		ctx, query,
 	); err != nil {
-		return
+		return contacts, err
 	}
 
 	// Determine if single or multiple
@@ -64,7 +62,7 @@ func (c *Client) GetContacts(ctx context.Context, query *ContactQuery) (contacts
 			response.BodyContents, &contacts,
 		); err != nil {
 			contacts = nil
-			return
+			return contacts, err
 		}
 	} else { // Parse as a single contact
 		contact := new(Contact)
@@ -72,12 +70,12 @@ func (c *Client) GetContacts(ctx context.Context, query *ContactQuery) (contacts
 			response.BodyContents, &contact,
 		); err != nil {
 			contacts = nil
-			return
+			return contacts, err
 		}
 		contacts.Data = append(contacts.Data, contact.Data)
 	}
 
-	return
+	return contacts, err
 }
 
 // GetContactsRaw will fire the HTTP request to retrieve the raw contact data
@@ -85,7 +83,7 @@ func (c *Client) GetContacts(ctx context.Context, query *ContactQuery) (contacts
 func (c *Client) GetContactsRaw(ctx context.Context, query *ContactQuery) (response *RequestResponse, err error) {
 	var queryURL string
 	if queryURL, err = query.BuildURL(); err != nil {
-		return
+		return response, err
 	}
 	if response = httpRequest(
 		ctx, c, &httpPayload{
@@ -96,5 +94,5 @@ func (c *Client) GetContactsRaw(ctx context.Context, query *ContactQuery) (respo
 	); response.Error != nil {
 		err = response.Error
 	}
-	return
+	return response, err
 }

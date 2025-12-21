@@ -72,7 +72,6 @@ func DefaultClientOptions() (clientOptions *ClientOptions) {
 
 // NewClient will make a new http client based on the options provided
 func NewClient(oAuthAccessToken string, options *ClientOptions, customHTTPClient *http.Client) (c *Client) {
-
 	// Create a client
 	c = new(Client)
 	c.OAuthAccessToken = oAuthAccessToken
@@ -88,7 +87,7 @@ func NewClient(oAuthAccessToken string, options *ClientOptions, customHTTPClient
 	// Is there a custom HTTP client to use?
 	if customHTTPClient != nil {
 		c.httpClient = customHTTPClient
-		return
+		return c
 	}
 
 	// dial is the net dialer for clientDefaultTransport
@@ -115,7 +114,7 @@ func NewClient(oAuthAccessToken string, options *ClientOptions, customHTTPClient
 				Timeout:   options.RequestTimeout,
 			}),
 		)
-		return
+		return c
 	}
 
 	// Retry enabled - create exponential back-off
@@ -135,5 +134,5 @@ func NewClient(oAuthAccessToken string, options *ClientOptions, customHTTPClient
 		}),
 	)
 
-	return
+	return c
 }
