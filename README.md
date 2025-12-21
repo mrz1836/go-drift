@@ -165,23 +165,23 @@ Read more about this Go project's [code standards](.github/CODE_STANDARDS.md).
 
 ## Usage
 View the [examples](examples)
- 
+
 <br/>
 
 ## Maintainers
 | [<img src="https://github.com/mrz1836.png" height="50" alt="MrZ" />](https://github.com/mrz1836) |
 |:------------------------------------------------------------------------------------------------:|
 |                                [MrZ](https://github.com/mrz1836)                                 |
-              
+
 <br/>
 
 ## Contributing
 View the [contributing guidelines](.github/CONTRIBUTING.md) and please follow the [code of conduct](.github/CODE_OF_CONDUCT.md).
 
 ### How can I help?
-All kinds of contributions are welcome :raised_hands:! 
-The most basic way to show your support is to star :star2: the project, or to raise issues :speech_balloon:. 
-You can also support this project by [becoming a sponsor on GitHub](https://github.com/sponsors/mrz1836) :clap: 
+All kinds of contributions are welcome :raised_hands:!
+The most basic way to show your support is to star :star2: the project, or to raise issues :speech_balloon:.
+You can also support this project by [becoming a sponsor on GitHub](https://github.com/sponsors/mrz1836) :clap:
 or by making a [**bitcoin donation**](https://mrz1818.com/?tab=tips&utm_source=github&utm_medium=sponsor-link&utm_campaign=go-drift&utm_term=go-drift&utm_content=go-drift) to ensure this journey continues indefinitely! :rocket:
 
 
