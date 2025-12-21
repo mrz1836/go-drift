@@ -1,3 +1,4 @@
+// Package main provides an example of updating a contact in the Drift API.
 package main
 
 import (

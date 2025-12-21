@@ -3,11 +3,27 @@ package drift
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 )
+
+// ErrResourceNotFound is returned when a resource is not found (404).
+var ErrResourceNotFound = errors.New("resource not found")
+
+// ErrUnauthorized is returned when oauth access token is invalid or missing (401).
+var ErrUnauthorized = errors.New("oauth access token possibly invalid or missing")
+
+// ErrMalformedRequest is returned when request data is malformed (400).
+var ErrMalformedRequest = errors.New("malformed request data")
+
+// ErrConflict is returned when there is an issue creating or updating a record (409).
+var ErrConflict = errors.New("issue with creating or updating record, possibly already exists")
+
+// ErrUnexpectedStatus is returned when the status code does not match the expected status.
+var ErrUnexpectedStatus = errors.New("unexpected status code")
 
 // RequestResponse is the response from a request
 type RequestResponse struct {
@@ -91,17 +107,17 @@ func httpRequest(ctx context.Context, client *Client,
 	if payload.ExpectedStatus != resp.StatusCode {
 		switch resp.StatusCode {
 		case http.StatusNotFound:
-			response.Error = fmt.Errorf("resource not found: %s", response.URL)
+			response.Error = fmt.Errorf("%w: %s", ErrResourceNotFound, response.URL)
 		case http.StatusUnauthorized:
-			response.Error = fmt.Errorf("oauth access token possible invalid or missing")
+			response.Error = ErrUnauthorized
 		case http.StatusBadRequest:
-			response.Error = fmt.Errorf("malformatted request data")
+			response.Error = ErrMalformedRequest
 		case http.StatusConflict:
-			response.Error = fmt.Errorf("issue with creating or updating record, possibly already exists")
+			response.Error = ErrConflict
 		default:
 			response.Error = fmt.Errorf(
-				"status code: %d does not match %d",
-				resp.StatusCode, payload.ExpectedStatus,
+				"%w: %d does not match %d",
+				ErrUnexpectedStatus, resp.StatusCode, payload.ExpectedStatus,
 			)
 		}
 		return response

@@ -3,9 +3,13 @@ package drift
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 )
+
+// ErrMissingContactIdentifier is returned when contact id, email or external id is not provided.
+var ErrMissingContactIdentifier = errors.New("contact id, email or external id is required")
 
 // ContactQuery is how we want to get a contact(s)
 type ContactQuery struct {
@@ -19,8 +23,7 @@ type ContactQuery struct {
 func (q *ContactQuery) BuildURL() (queryURL string, err error) {
 	// Make sure we have something to search for
 	if len(q.ID) == 0 && len(q.Email) == 0 && len(q.ExternalID) == 0 {
-		err = fmt.Errorf("contact id, email or external id is required")
-		return queryURL, err
+		return queryURL, ErrMissingContactIdentifier
 	}
 
 	// Set a default limit if no limit is given

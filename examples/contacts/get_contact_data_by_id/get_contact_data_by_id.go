@@ -1,3 +1,4 @@
+// Package main provides an example of retrieving raw contact data by ID from the Drift API.
 package main
 
 import (

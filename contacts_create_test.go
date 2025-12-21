@@ -3,13 +3,16 @@ package drift
 import (
 	"bytes"
 	"context"
-	"fmt"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+var errMissingRequest = errors.New("missing request")
 
 // mockHTTPCreateContact for mocking requests
 type mockHTTPCreateContact struct{}
@@ -21,13 +24,13 @@ func (m *mockHTTPCreateContact) Do(req *http.Request) (*http.Response, error) {
 
 	// No req found
 	if req == nil {
-		return resp, fmt.Errorf("missing request")
+		return resp, errMissingRequest
 	}
 
 	// Valid response
 	if req.URL.String() == apiEndpoint+"/contacts" {
 		resp.StatusCode = http.StatusOK
-		resp.Body = ioutil.NopCloser(bytes.NewBuffer([]byte(`{"data":{"id":` + testContactID + `,"createdAt":1614563742010,"attributes":{"_END_USER_VERSION":3,"_end_user_version":3,"_calculated_version":3,"socialProfiles":{},"name":"` + testContactName + `","email":"` + testContactEmail + `","events":{},"tags":[],"start_date":1614563742010}}}`)))
+		resp.Body = ioutil.NopCloser(bytes.NewBufferString(`{"data":{"id":` + testContactID + `,"createdAt":1614563742010,"attributes":{"_END_USER_VERSION":3,"_end_user_version":3,"_calculated_version":3,"socialProfiles":{},"name":"` + testContactName + `","email":"` + testContactEmail + `","events":{},"tags":[],"start_date":1614563742010}}}`))
 	}
 
 	// Default is valid
@@ -50,8 +53,8 @@ func TestClient_CreateContact(t *testing.T) {
 				Name:  testContactName,
 				Phone: testContactPhone,
 			}})
+		require.NoError(t, err)
 		assert.NotNil(t, contact)
-		assert.NoError(t, err)
 
 		// Got a contact
 		assert.Equal(t, uint64(123456789), contact.Data.ID)

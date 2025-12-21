@@ -32,6 +32,7 @@ type StandardAttributes struct {
 // attributes are the base attributes for the contact
 type attributes struct {
 	StandardAttributes
+
 	CalculatedVersion                    int                    `json:"_calculated_version"`
 	Classification                       string                 `json:"_classification"`
 	EndUserVersion                       int                    `json:"_end_user_version"`

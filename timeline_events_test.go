@@ -3,13 +3,13 @@ package drift
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // mockHTTPTimelineEvents for mocking requests
@@ -22,13 +22,13 @@ func (m *mockHTTPTimelineEvents) Do(req *http.Request) (*http.Response, error) {
 
 	// No req found
 	if req == nil {
-		return resp, fmt.Errorf("missing request")
+		return resp, errMissingRequest
 	}
 
 	// Valid response
 	if req.URL.String() == apiEndpoint+"/contacts/timeline" {
 		resp.StatusCode = http.StatusOK
-		resp.Body = ioutil.NopCloser(bytes.NewBuffer([]byte(`{"data":{"attributes":{},"event":"` + testEventName + `","createdAt":1614571424495,"contactId":` + testContactID + `}}`)))
+		resp.Body = ioutil.NopCloser(bytes.NewBufferString(`{"data":{"attributes":{},"event":"` + testEventName + `","createdAt":1614571424495,"contactId":` + testContactID + `}}`))
 	}
 
 	// Default is valid
@@ -44,7 +44,7 @@ func TestClient_CreateTimelineEvent(t *testing.T) {
 		client := newTestClient(&mockHTTPTimelineEvents{})
 
 		id, err := strconv.ParseUint(testContactID, 10, 64)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Create a req
 		var resp *TimelineResponse
@@ -53,8 +53,8 @@ func TestClient_CreateTimelineEvent(t *testing.T) {
 				ContactID: id,
 				Event:     testEventName,
 			})
+		require.NoError(t, err)
 		assert.NotNil(t, resp)
-		assert.NoError(t, err)
 
 		// Got a contact
 		assert.Equal(t, testEventName, resp.Data.Event)

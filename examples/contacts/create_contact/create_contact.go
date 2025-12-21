@@ -1,3 +1,4 @@
+// Package main provides an example of creating a contact in the Drift API.
 package main
 
 import (
