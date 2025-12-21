@@ -4,9 +4,6 @@ import (
 	"net"
 	"net/http"
 	"time"
-
-	"github.com/gojektech/heimdall/v6"
-	"github.com/gojektech/heimdall/v6/httpclient"
 )
 
 const (
@@ -103,36 +100,28 @@ func NewClient(oAuthAccessToken string, options *ClientOptions, customHTTPClient
 		TLSHandshakeTimeout:   options.TransportTLSHandshakeTimeout,
 	}
 
-	// Determine the strategy for the http client
-	if options.RequestRetryCount <= 0 {
-
-		// no retry enabled
-		c.httpClient = httpclient.NewClient(
-			httpclient.WithHTTPTimeout(options.RequestTimeout),
-			httpclient.WithHTTPClient(&http.Client{
-				Transport: clientDefaultTransport,
-				Timeout:   options.RequestTimeout,
-			}),
-		)
-		return c
+	// Create base HTTP client
+	baseClient := &http.Client{
+		Transport: clientDefaultTransport,
+		Timeout:   options.RequestTimeout,
 	}
 
-	// Retry enabled - create exponential back-off
-	c.httpClient = httpclient.NewClient(
-		httpclient.WithHTTPTimeout(options.RequestTimeout),
-		httpclient.WithRetrier(heimdall.NewRetrier(
-			heimdall.NewExponentialBackoff(
-				options.BackOffInitialTimeout,
-				options.BackOffMaxTimeout,
-				options.BackOffExponentFactor,
-				options.BackOffMaximumJitterInterval,
-			))),
-		httpclient.WithRetryCount(options.RequestRetryCount),
-		httpclient.WithHTTPClient(&http.Client{
-			Transport: clientDefaultTransport,
-			Timeout:   options.RequestTimeout,
-		}),
-	)
+	// Wrap with resilient client if retries are configured
+	if options.RequestRetryCount > 0 {
+		backoff := NewExponentialBackoff(
+			options.BackOffInitialTimeout,
+			options.BackOffMaxTimeout,
+			options.BackOffExponentFactor,
+			options.BackOffMaximumJitterInterval,
+		)
+		c.httpClient = NewResilientClient(
+			baseClient,
+			WithBackoff(backoff),
+			WithRetryCount(options.RequestRetryCount),
+		)
+	} else {
+		c.httpClient = baseClient
+	}
 
 	return c
 }
