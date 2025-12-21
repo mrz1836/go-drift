@@ -3,7 +3,7 @@ package drift
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"testing"
@@ -28,7 +28,7 @@ func (m *mockHTTPTimelineEvents) Do(req *http.Request) (*http.Response, error) {
 	// Valid response
 	if req.URL.String() == apiEndpoint+"/contacts/timeline" {
 		resp.StatusCode = http.StatusOK
-		resp.Body = ioutil.NopCloser(bytes.NewBufferString(`{"data":{"attributes":{},"event":"` + testEventName + `","createdAt":1614571424495,"contactId":` + testContactID + `}}`))
+		resp.Body = io.NopCloser(bytes.NewBufferString(`{"data":{"attributes":{},"event":"` + testEventName + `","createdAt":1614571424495,"contactId":` + testContactID + `}}`))
 	}
 
 	// Default is valid

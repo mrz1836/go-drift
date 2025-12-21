@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -124,7 +123,7 @@ func httpRequest(ctx context.Context, client *Client,
 	}
 
 	// Read the body
-	response.BodyContents, response.Error = ioutil.ReadAll(resp.Body)
+	response.BodyContents, response.Error = io.ReadAll(resp.Body)
 
 	return response
 }
