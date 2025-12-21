@@ -52,12 +52,23 @@ func (e *ExponentialBackoff) Next(attempt int) time.Duration {
 	// Calculate base delay: initialTimeout * exponentFactor^attempt
 	baseDelay := float64(e.initialTimeout) * math.Pow(e.exponentFactor, float64(attempt))
 
-	// Cap at maxTimeout
-	if baseDelay > float64(e.maxTimeout) {
-		baseDelay = float64(e.maxTimeout)
+	// Cap at maxTimeout (handles normal case and +Inf)
+	maxTimeoutFloat := float64(e.maxTimeout)
+	if math.IsNaN(baseDelay) || math.IsInf(baseDelay, 0) || baseDelay > maxTimeoutFloat {
+		baseDelay = maxTimeoutFloat
+	}
+
+	// Ensure non-negative before conversion
+	if baseDelay < 0 {
+		baseDelay = 0
 	}
 
 	delay := time.Duration(baseDelay)
+
+	// Handle overflow: large float64 values can become negative when cast to int64
+	if delay < 0 {
+		delay = e.maxTimeout
+	}
 
 	// Add jitter (0 to maxJitter)
 	if e.maxJitter > 0 {
