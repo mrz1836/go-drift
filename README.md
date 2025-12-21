@@ -92,6 +92,8 @@
 go get -u github.com/mrz1836/go-drift
 ```
 
+<br/>
+
 ## 📚 Documentation
 
 View the generated [documentation](https://pkg.go.dev/github.com/mrz1836/go-drift?tab=doc)
@@ -103,7 +105,7 @@ extra baggage.
 
 <br/>
 
-### Coverage
+### API Coverage
 - Current coverage for the [Drift API](https://devdocs.drift.com/docs/using-drift-apis)
 	- [x] Contacts API
 		- [x] Creating a Contact
