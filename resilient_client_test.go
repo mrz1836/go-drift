@@ -16,8 +16,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// errTestRandom is a test error used for non-retryable error scenarios
-var errTestRandom = errors.New("some error")
+// Static test errors to satisfy err113 linter
+var (
+	errTestRandom = errors.New("some error")
+	errGetBody    = errors.New("GetBody error")
+)
 
 // mockTransport is a test transport that can simulate various responses
 type mockTransport struct {
@@ -480,6 +483,113 @@ func TestIsRetryableErrorTimeout(t *testing.T) {
 
 	var netErr net.Error = &mockTimeoutError{}
 	assert.True(t, isRetryableError(netErr))
+}
+
+func TestIsRetryableErrorDNS(t *testing.T) {
+	t.Parallel()
+
+	t.Run("temporary DNS error is retryable", func(t *testing.T) {
+		dnsErr := &net.DNSError{
+			Err:         "lookup failed",
+			Name:        "example.com",
+			IsTemporary: true,
+		}
+		assert.True(t, isRetryableError(dnsErr))
+	})
+
+	t.Run("permanent DNS error is not retryable", func(t *testing.T) {
+		dnsErr := &net.DNSError{
+			Err:         "no such host",
+			Name:        "example.com",
+			IsTemporary: false,
+		}
+		assert.False(t, isRetryableError(dnsErr))
+	})
+}
+
+func TestResilientClientDoGetBodyError(t *testing.T) {
+	t.Parallel()
+
+	transport := &mockTransport{
+		responses: []*http.Response{
+			{StatusCode: http.StatusInternalServerError, Body: io.NopCloser(bytes.NewBufferString(`error`))},
+		},
+	}
+
+	backoff := &mockBackoff{delays: []time.Duration{0}}
+	client := NewResilientClient(
+		&http.Client{Transport: transport},
+		WithBackoff(backoff),
+		WithRetryCount(1),
+	)
+
+	body := bytes.NewBufferString(`{"test":"data"}`)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, "http://example.com", body)
+	require.NoError(t, err)
+
+	// Set GetBody to return an error on retry
+	req.GetBody = func() (io.ReadCloser, error) {
+		return nil, errGetBody
+	}
+
+	_, err = client.Do(req) //nolint:bodyclose // Error case: no response body to close
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "GetBody error")
+}
+
+func TestResilientClientDoContextAlreadyCanceled(t *testing.T) {
+	t.Parallel()
+
+	transport := &mockTransport{}
+	client := NewResilientClient(
+		&http.Client{Transport: transport},
+		WithRetryCount(2),
+	)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel before request
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://example.com", nil)
+	require.NoError(t, err)
+
+	_, err = client.Do(req) //nolint:bodyclose // Error case: no response body to close
+	require.ErrorIs(t, err, context.Canceled)
+	assert.Equal(t, int32(0), transport.callCount.Load()) // No attempts made
+}
+
+func TestWaitForRetryNilResponse(t *testing.T) {
+	t.Parallel()
+
+	client := NewResilientClient(&http.Client{})
+
+	// waitForRetry should handle nil response gracefully
+	err := client.waitForRetry(context.Background(), nil, 0)
+	assert.NoError(t, err)
+}
+
+func TestWaitForRetryNilBody(t *testing.T) {
+	t.Parallel()
+
+	client := NewResilientClient(&http.Client{})
+
+	// waitForRetry should handle response with nil body
+	resp := &http.Response{StatusCode: 500, Body: nil}
+	err := client.waitForRetry(context.Background(), resp, 0)
+	assert.NoError(t, err)
+}
+
+func TestWaitForRetryWithoutBackoff(t *testing.T) {
+	t.Parallel()
+
+	// Client without backoff configured
+	client := NewResilientClient(&http.Client{})
+
+	resp := &http.Response{
+		StatusCode: 500,
+		Body:       io.NopCloser(bytes.NewBufferString(`error`)),
+	}
+	err := client.waitForRetry(context.Background(), resp, 0)
+	assert.NoError(t, err)
 }
 
 func BenchmarkResilientClientDo(b *testing.B) {

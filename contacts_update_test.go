@@ -35,6 +35,23 @@ func (m *mockHTTPUpdateContact) Do(req *http.Request) (*http.Response, error) {
 	return resp, nil
 }
 
+// mockHTTPUpdateContactError for testing error scenarios
+type mockHTTPUpdateContactError struct {
+	statusCode int
+	body       string
+}
+
+// Do returns a configurable error response
+func (m *mockHTTPUpdateContactError) Do(req *http.Request) (*http.Response, error) {
+	if req == nil {
+		return nil, errMissingRequest
+	}
+	return &http.Response{
+		StatusCode: m.statusCode,
+		Body:       io.NopCloser(bytes.NewBufferString(m.body)),
+	}, nil
+}
+
 // TestClient_UpdateContact tests the method UpdateContact()
 func TestClient_UpdateContact(t *testing.T) {
 	t.Parallel()
@@ -60,6 +77,122 @@ func TestClient_UpdateContact(t *testing.T) {
 		assert.Equal(t, id, contact.Data.ID)
 		assert.Equal(t, int64(1606273669631), contact.Data.CreatedAt)
 		assert.Equal(t, testContactName+"2", contact.Data.Attributes.Name)
+	})
+
+	t.Run("returns error when UpdateContactRaw fails", func(t *testing.T) {
+		client := newTestClient(&mockHTTPUpdateContactError{
+			statusCode: http.StatusBadRequest,
+			body:       "",
+		})
+
+		id, err := strconv.ParseUint(testContactID, 10, 64)
+		require.NoError(t, err)
+
+		contact, err := client.UpdateContact(
+			context.Background(), id,
+			&ContactFields{&StandardAttributes{
+				Name: testContactName,
+			}})
+
+		require.Error(t, err)
+		assert.Nil(t, contact)
+		assert.ErrorIs(t, err, ErrMalformedRequest)
+	})
+
+	t.Run("returns error on 404 not found", func(t *testing.T) {
+		client := newTestClient(&mockHTTPUpdateContactError{
+			statusCode: http.StatusNotFound,
+			body:       "",
+		})
+
+		contact, err := client.UpdateContact(
+			context.Background(), 999999,
+			&ContactFields{&StandardAttributes{
+				Name: testContactName,
+			}})
+
+		require.Error(t, err)
+		assert.Nil(t, contact)
+		assert.ErrorIs(t, err, ErrResourceNotFound)
+	})
+
+	t.Run("returns error on response unmarshal failure", func(t *testing.T) {
+		client := newTestClient(&mockHTTPUpdateContactError{
+			statusCode: http.StatusOK,
+			body:       `{"data":{"invalid json`,
+		})
+
+		id, err := strconv.ParseUint(testContactID, 10, 64)
+		require.NoError(t, err)
+
+		contact, err := client.UpdateContact(
+			context.Background(), id,
+			&ContactFields{&StandardAttributes{
+				Name: testContactName,
+			}})
+
+		require.Error(t, err)
+		assert.Nil(t, contact)
+	})
+}
+
+// TestClient_UpdateContactRaw tests the method UpdateContactRaw()
+func TestClient_UpdateContactRaw(t *testing.T) {
+	t.Parallel()
+
+	t.Run("updates contact successfully", func(t *testing.T) {
+		client := newTestClient(&mockHTTPUpdateContact{})
+
+		id, err := strconv.ParseUint(testContactID, 10, 64)
+		require.NoError(t, err)
+
+		response, err := client.UpdateContactRaw(
+			context.Background(), id,
+			&ContactFields{&StandardAttributes{
+				Name: testContactName + "2",
+			}})
+
+		require.NoError(t, err)
+		assert.NotNil(t, response)
+		require.NoError(t, response.Error)
+		assert.Equal(t, http.StatusOK, response.StatusCode)
+		assert.Equal(t, http.MethodPatch, response.Method)
+	})
+
+	t.Run("returns error on HTTP failure", func(t *testing.T) {
+		client := newTestClient(&mockHTTPUpdateContactError{
+			statusCode: http.StatusBadRequest,
+			body:       "",
+		})
+
+		id, err := strconv.ParseUint(testContactID, 10, 64)
+		require.NoError(t, err)
+
+		response, err := client.UpdateContactRaw(
+			context.Background(), id,
+			&ContactFields{&StandardAttributes{
+				Name: testContactName,
+			}})
+
+		require.Error(t, err)
+		assert.NotNil(t, response)
+		assert.ErrorIs(t, err, ErrMalformedRequest)
+	})
+
+	t.Run("uses correct endpoint URL with contact ID", func(t *testing.T) {
+		client := newTestClient(&mockHTTPUpdateContact{})
+
+		id, err := strconv.ParseUint(testContactID, 10, 64)
+		require.NoError(t, err)
+
+		response, err := client.UpdateContactRaw(
+			context.Background(), id,
+			&ContactFields{&StandardAttributes{
+				Name: testContactName,
+			}})
+
+		require.NoError(t, err)
+		assert.Contains(t, response.URL, "/contacts/"+testContactID)
 	})
 }
 

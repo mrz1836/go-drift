@@ -26,6 +26,13 @@ func newTestClient(httpClient httpInterface) *Client {
 	return client
 }
 
+// newTestClientNoToken creates a client without OAuth token for testing
+func newTestClientNoToken(httpClient httpInterface) *Client {
+	client := NewClient("", nil, nil)
+	client.httpClient = httpClient
+	return client
+}
+
 // TestNewClient test new client
 func TestNewClient(t *testing.T) {
 	t.Parallel()

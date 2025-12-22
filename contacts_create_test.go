@@ -37,6 +37,23 @@ func (m *mockHTTPCreateContact) Do(req *http.Request) (*http.Response, error) {
 	return resp, nil
 }
 
+// mockHTTPCreateContactError for testing error scenarios
+type mockHTTPCreateContactError struct {
+	statusCode int
+	body       string
+}
+
+// Do returns a configurable error response
+func (m *mockHTTPCreateContactError) Do(req *http.Request) (*http.Response, error) {
+	if req == nil {
+		return nil, errMissingRequest
+	}
+	return &http.Response{
+		StatusCode: m.statusCode,
+		Body:       io.NopCloser(bytes.NewBufferString(m.body)),
+	}, nil
+}
+
 // TestClient_CreateContact tests the method CreateContact()
 func TestClient_CreateContact(t *testing.T) {
 	t.Parallel()
@@ -61,6 +78,96 @@ func TestClient_CreateContact(t *testing.T) {
 		assert.Equal(t, int64(1614563742010), contact.Data.CreatedAt)
 		assert.Equal(t, 3, contact.Data.Attributes.EndUserVersion)
 		assert.Equal(t, 1614563742010, contact.Data.Attributes.StartDate)
+	})
+
+	t.Run("returns error when CreateContactRaw fails", func(t *testing.T) {
+		client := newTestClient(&mockHTTPCreateContactError{
+			statusCode: http.StatusBadRequest,
+			body:       "",
+		})
+
+		contact, err := client.CreateContact(
+			context.Background(),
+			&ContactFields{&StandardAttributes{
+				Email: testContactEmail,
+				Name:  testContactName,
+			}})
+
+		require.Error(t, err)
+		assert.Nil(t, contact)
+		assert.ErrorIs(t, err, ErrMalformedRequest)
+	})
+
+	t.Run("returns error on 401 unauthorized", func(t *testing.T) {
+		client := newTestClient(&mockHTTPCreateContactError{
+			statusCode: http.StatusUnauthorized,
+			body:       "",
+		})
+
+		contact, err := client.CreateContact(
+			context.Background(),
+			&ContactFields{&StandardAttributes{
+				Email: testContactEmail,
+			}})
+
+		require.Error(t, err)
+		assert.Nil(t, contact)
+		assert.ErrorIs(t, err, ErrUnauthorized)
+	})
+
+	t.Run("returns error on response unmarshal failure", func(t *testing.T) {
+		client := newTestClient(&mockHTTPCreateContactError{
+			statusCode: http.StatusOK,
+			body:       `{"data":{"invalid json`,
+		})
+
+		contact, err := client.CreateContact(
+			context.Background(),
+			&ContactFields{&StandardAttributes{
+				Email: testContactEmail,
+			}})
+
+		require.Error(t, err)
+		assert.Nil(t, contact)
+	})
+}
+
+// TestClient_CreateContactRaw tests the method CreateContactRaw()
+func TestClient_CreateContactRaw(t *testing.T) {
+	t.Parallel()
+
+	t.Run("creates contact successfully", func(t *testing.T) {
+		client := newTestClient(&mockHTTPCreateContact{})
+
+		response, err := client.CreateContactRaw(
+			context.Background(),
+			&ContactFields{&StandardAttributes{
+				Email: testContactEmail,
+				Name:  testContactName,
+			}})
+
+		require.NoError(t, err)
+		assert.NotNil(t, response)
+		require.NoError(t, response.Error)
+		assert.Equal(t, http.StatusOK, response.StatusCode)
+		assert.Equal(t, http.MethodPost, response.Method)
+	})
+
+	t.Run("returns error on HTTP failure", func(t *testing.T) {
+		client := newTestClient(&mockHTTPCreateContactError{
+			statusCode: http.StatusBadRequest,
+			body:       "",
+		})
+
+		response, err := client.CreateContactRaw(
+			context.Background(),
+			&ContactFields{&StandardAttributes{
+				Email: testContactEmail,
+			}})
+
+		require.Error(t, err)
+		assert.NotNil(t, response)
+		assert.ErrorIs(t, err, ErrMalformedRequest)
 	})
 }
 

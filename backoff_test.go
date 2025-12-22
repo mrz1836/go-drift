@@ -148,6 +148,46 @@ func TestExponentialBackoffNext(t *testing.T) {
 		assert.GreaterOrEqual(t, delay, 22*time.Millisecond)
 		assert.LessOrEqual(t, delay, 23*time.Millisecond)
 	})
+
+	t.Run("handles very high attempt numbers causing infinity", func(t *testing.T) {
+		b := NewExponentialBackoff(
+			1*time.Millisecond,
+			100*time.Millisecond,
+			2.0,
+			0,
+		)
+
+		// Very high attempt number will cause math.Pow to return +Inf
+		// which should be capped to maxTimeout
+		delay := b.Next(10000)
+		assert.Equal(t, 100*time.Millisecond, delay)
+	})
+
+	t.Run("handles large exponent factor causing overflow", func(t *testing.T) {
+		b := NewExponentialBackoff(
+			1*time.Hour,
+			2*time.Hour,
+			10.0, // Large factor
+			0,
+		)
+
+		// Large values will cause overflow, should cap to maxTimeout
+		delay := b.Next(100)
+		assert.Equal(t, 2*time.Hour, delay)
+	})
+
+	t.Run("handles duration conversion overflow", func(t *testing.T) {
+		b := NewExponentialBackoff(
+			time.Duration(1<<62), // Very large value
+			time.Duration(1<<62),
+			2.0,
+			0,
+		)
+
+		// When float64 to int64 conversion overflows, falls back to maxTimeout
+		delay := b.Next(10)
+		assert.GreaterOrEqual(t, delay, time.Duration(0))
+	})
 }
 
 func TestExponentialBackoffImplementsInterface(t *testing.T) {
