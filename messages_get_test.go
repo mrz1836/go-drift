@@ -292,6 +292,168 @@ func TestClient_GetFirstMessage(t *testing.T) {
 	})
 }
 
+// TestClient_GetAllMessages tests the method GetAllMessages()
+func TestClient_GetAllMessages(t *testing.T) {
+	t.Parallel()
+
+	t.Run("single page no pagination", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpoint+"/conversations/116119985/messages", http.StatusOK,
+				`{"data":{"messages":[{"id":1,"orgId":12345,"conversationId":116119985,"body":"Hello","type":"chat","createdAt":1000}]}}`)
+
+		client := newTestClient(mock)
+
+		messages, err := client.GetAllMessages(context.Background(), testConversationID)
+		require.NoError(t, err)
+		assert.NotNil(t, messages)
+		assert.NotNil(t, messages.Data)
+		assert.Len(t, messages.Data.Messages, 1)
+		assert.Equal(t, uint64(1), messages.Data.Messages[0].ID)
+	})
+
+	t.Run("multiple pages with pagination", func(t *testing.T) {
+		// Use the existing mock which has pagination
+		client := newTestClient(mockGetMessages())
+
+		messages, err := client.GetAllMessages(context.Background(), testConversationID)
+		require.NoError(t, err)
+		assert.NotNil(t, messages)
+		assert.NotNil(t, messages.Data)
+		// First page has 2 messages, second page has 1
+		assert.Len(t, messages.Data.Messages, 3)
+	})
+
+	t.Run("empty response", func(t *testing.T) {
+		client := newTestClient(mockGetMessagesEmpty())
+
+		messages, err := client.GetAllMessages(context.Background(), testConversationID)
+		require.NoError(t, err)
+		assert.NotNil(t, messages)
+		assert.NotNil(t, messages.Data)
+		assert.Empty(t, messages.Data.Messages)
+	})
+
+	t.Run("nil data field handling", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpoint+"/conversations/116119985/messages", http.StatusOK,
+				`{}`)
+
+		client := newTestClient(mock)
+
+		messages, err := client.GetAllMessages(context.Background(), testConversationID)
+		require.NoError(t, err)
+		assert.NotNil(t, messages)
+		// Data should be initialized even if response has none
+		assert.NotNil(t, messages.Data)
+	})
+
+	t.Run("error on first request", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpoint+"/conversations/116119985/messages", http.StatusInternalServerError, "")
+
+		client := newTestClient(mock)
+
+		messages, err := client.GetAllMessages(context.Background(), testConversationID)
+		require.Error(t, err)
+		assert.Nil(t, messages)
+	})
+
+	t.Run("missing conversation id", func(t *testing.T) {
+		client := newTestClient(mockGetMessages())
+
+		messages, err := client.GetAllMessages(context.Background(), 0)
+		require.Error(t, err)
+		assert.Equal(t, ErrMissingConversationID, err)
+		assert.Nil(t, messages)
+	})
+
+	t.Run("error on subsequent page request", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpoint+"/conversations/116119985/messages", http.StatusOK,
+				`{"data":{"messages":[{"id":1,"orgId":12345,"conversationId":116119985,"body":"Hello","type":"chat","createdAt":1000}]},"pagination":{"next":"page2"}}`).
+			addRoute(apiEndpoint+"/conversations/116119985/messages?next=page2", http.StatusInternalServerError, "")
+
+		client := newTestClient(mock)
+
+		messages, err := client.GetAllMessages(context.Background(), testConversationID)
+		require.Error(t, err)
+		assert.Nil(t, messages)
+	})
+
+	t.Run("nil data on subsequent page", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpoint+"/conversations/116119985/messages", http.StatusOK,
+				`{"data":{"messages":[{"id":1,"orgId":12345,"conversationId":116119985,"body":"Hello","type":"chat","createdAt":1000}]},"pagination":{"next":"page2"}}`).
+			addRoute(apiEndpoint+"/conversations/116119985/messages?next=page2", http.StatusOK,
+				`{"pagination":{"next":""}}`)
+
+		client := newTestClient(mock)
+
+		messages, err := client.GetAllMessages(context.Background(), testConversationID)
+		require.NoError(t, err)
+		assert.NotNil(t, messages)
+		// Should only have the first page's messages
+		assert.Len(t, messages.Data.Messages, 1)
+	})
+}
+
+// TestClient_GetMessageCount tests the method GetMessageCount()
+func TestClient_GetMessageCount(t *testing.T) {
+	t.Parallel()
+
+	t.Run("count with multiple messages", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpoint+"/conversations/116119985/messages", http.StatusOK,
+				`{"data":{"messages":[{"id":1,"orgId":12345,"conversationId":116119985,"body":"Hello","type":"chat","createdAt":1000},{"id":2,"orgId":12345,"conversationId":116119985,"body":"World","type":"chat","createdAt":2000},{"id":3,"orgId":12345,"conversationId":116119985,"body":"!","type":"chat","createdAt":3000}]}}`)
+
+		client := newTestClient(mock)
+
+		count, err := client.GetMessageCount(context.Background(), testConversationID)
+		require.NoError(t, err)
+		assert.Equal(t, 3, count)
+	})
+
+	t.Run("count with zero messages", func(t *testing.T) {
+		client := newTestClient(mockGetMessagesEmpty())
+
+		count, err := client.GetMessageCount(context.Background(), testConversationID)
+		require.NoError(t, err)
+		assert.Equal(t, 0, count)
+	})
+
+	t.Run("count with nil data field", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpoint+"/conversations/116119985/messages", http.StatusOK,
+				`{}`)
+
+		client := newTestClient(mock)
+
+		count, err := client.GetMessageCount(context.Background(), testConversationID)
+		require.NoError(t, err)
+		assert.Equal(t, 0, count)
+	})
+
+	t.Run("error from get all messages propagates", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpoint+"/conversations/116119985/messages", http.StatusInternalServerError, "")
+
+		client := newTestClient(mock)
+
+		count, err := client.GetMessageCount(context.Background(), testConversationID)
+		require.Error(t, err)
+		assert.Equal(t, 0, count)
+	})
+
+	t.Run("missing conversation id", func(t *testing.T) {
+		client := newTestClient(mockGetMessages())
+
+		count, err := client.GetMessageCount(context.Background(), 0)
+		require.Error(t, err)
+		assert.Equal(t, ErrMissingConversationID, err)
+		assert.Equal(t, 0, count)
+	})
+}
+
 // BenchmarkClient_GetMessages benchmarks the GetMessages method
 func BenchmarkClient_GetMessages(b *testing.B) {
 	client := newTestClient(mockGetMessages())

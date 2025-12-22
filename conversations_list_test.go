@@ -129,6 +129,28 @@ func TestClient_ListConversations(t *testing.T) {
 		assert.Len(t, conversations.Data, 1)
 		assert.Equal(t, uint64(3782727149), conversations.Data[0].ID)
 	})
+
+	t.Run("bad json response", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpointList+"/conversations/list", http.StatusOK, `{"data":[{"id":}]}`)
+
+		client := newTestClient(mock)
+
+		conversations, err := client.ListConversations(context.Background(), nil)
+		require.Error(t, err)
+		assert.Nil(t, conversations)
+	})
+
+	t.Run("http error", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpointList+"/conversations/list", http.StatusInternalServerError, "")
+
+		client := newTestClient(mock)
+
+		conversations, err := client.ListConversations(context.Background(), nil)
+		require.Error(t, err)
+		assert.Nil(t, conversations)
+	})
 }
 
 // TestClient_ListConversationsRaw tests the method ListConversationsRaw()
@@ -214,6 +236,36 @@ func TestClient_ListConversationsNext(t *testing.T) {
 		assert.Equal(t, ErrNoNextPage, err)
 		assert.Nil(t, nextConversations)
 	})
+
+	t.Run("http error on next page", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute("https://api.drift.com/conversations/list?page_token=error", http.StatusInternalServerError, "")
+
+		client := newTestClient(mock)
+
+		conversations := &Conversations{
+			Data:  []*conversationData{},
+			Links: &PaginationLinks{Next: "https://api.drift.com/conversations/list?page_token=error"},
+		}
+		nextConversations, err := client.ListConversationsNext(context.Background(), conversations)
+		require.Error(t, err)
+		assert.Nil(t, nextConversations)
+	})
+
+	t.Run("bad json on next page", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute("https://api.drift.com/conversations/list?page_token=badjson", http.StatusOK, `{"data":[{"id":}]}`)
+
+		client := newTestClient(mock)
+
+		conversations := &Conversations{
+			Data:  []*conversationData{},
+			Links: &PaginationLinks{Next: "https://api.drift.com/conversations/list?page_token=badjson"},
+		}
+		nextConversations, err := client.ListConversationsNext(context.Background(), conversations)
+		require.Error(t, err)
+		assert.Nil(t, nextConversations)
+	})
 }
 
 // TestClient_ListOpenConversations tests the convenience method ListOpenConversations()
@@ -226,6 +278,20 @@ func TestClient_ListOpenConversations(t *testing.T) {
 		conversations, err := client.ListOpenConversations(context.Background(), 25)
 		require.NoError(t, err)
 		assert.NotNil(t, conversations)
+		assert.Len(t, conversations.Data, 1)
+		assert.Equal(t, "open", conversations.Data[0].Status)
+		assert.Equal(t, uint64(3782727146), conversations.Data[0].ID)
+	})
+
+	t.Run("error handling", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpointList+"/conversations/list?limit=25&statusId=1", http.StatusUnauthorized, "")
+
+		client := newTestClient(mock)
+
+		conversations, err := client.ListOpenConversations(context.Background(), 25)
+		require.Error(t, err)
+		assert.Nil(t, conversations)
 	})
 }
 
@@ -239,6 +305,20 @@ func TestClient_ListClosedConversations(t *testing.T) {
 		conversations, err := client.ListClosedConversations(context.Background(), 25)
 		require.NoError(t, err)
 		assert.NotNil(t, conversations)
+		assert.Len(t, conversations.Data, 1)
+		assert.Equal(t, "closed", conversations.Data[0].Status)
+		assert.Equal(t, uint64(3782727147), conversations.Data[0].ID)
+	})
+
+	t.Run("error handling", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpointList+"/conversations/list?limit=25&statusId=2", http.StatusUnauthorized, "")
+
+		client := newTestClient(mock)
+
+		conversations, err := client.ListClosedConversations(context.Background(), 25)
+		require.Error(t, err)
+		assert.Nil(t, conversations)
 	})
 }
 
@@ -252,6 +332,249 @@ func TestClient_ListPendingConversations(t *testing.T) {
 		conversations, err := client.ListPendingConversations(context.Background(), 25)
 		require.NoError(t, err)
 		assert.NotNil(t, conversations)
+		assert.Len(t, conversations.Data, 1)
+		assert.Equal(t, "pending", conversations.Data[0].Status)
+		assert.Equal(t, uint64(3782727148), conversations.Data[0].ID)
+	})
+
+	t.Run("error handling", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpointList+"/conversations/list?limit=25&statusId=3", http.StatusUnauthorized, "")
+
+		client := newTestClient(mock)
+
+		conversations, err := client.ListPendingConversations(context.Background(), 25)
+		require.Error(t, err)
+		assert.Nil(t, conversations)
+	})
+}
+
+// TestClient_ListAllConversations tests the method ListAllConversations()
+func TestClient_ListAllConversations(t *testing.T) {
+	t.Parallel()
+
+	t.Run("single page no pagination", func(t *testing.T) {
+		// Mock with no next link
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpointList+"/conversations/list", http.StatusOK,
+				`{"data":[{"id":1,"contactId":100,"inboxId":1,"status":"open","createdAt":1,"updatedAt":1}]}`)
+
+		client := newTestClient(mock)
+
+		conversations, err := client.ListAllConversations(context.Background(), nil)
+		require.NoError(t, err)
+		assert.NotNil(t, conversations)
+		assert.Len(t, conversations.Data, 1)
+		assert.Equal(t, uint64(1), conversations.Data[0].ID)
+	})
+
+	t.Run("multiple pages with pagination", func(t *testing.T) {
+		// Use the existing mock which has pagination links
+		client := newTestClient(mockListConversations())
+
+		conversations, err := client.ListAllConversations(context.Background(), nil)
+		require.NoError(t, err)
+		assert.NotNil(t, conversations)
+		// First page has 2 conversations, second page has 1
+		assert.Len(t, conversations.Data, 3)
+	})
+
+	t.Run("empty response", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpointList+"/conversations/list", http.StatusOK,
+				`{"data":[]}`)
+
+		client := newTestClient(mock)
+
+		conversations, err := client.ListAllConversations(context.Background(), nil)
+		require.NoError(t, err)
+		assert.NotNil(t, conversations)
+		assert.Empty(t, conversations.Data)
+	})
+
+	t.Run("error on first request", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpointList+"/conversations/list", http.StatusInternalServerError, "")
+
+		client := newTestClient(mock)
+
+		conversations, err := client.ListAllConversations(context.Background(), nil)
+		require.Error(t, err)
+		assert.Nil(t, conversations)
+	})
+
+	t.Run("with query parameters", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpointList+"/conversations/list?limit=50&statusId=1", http.StatusOK,
+				`{"data":[{"id":1,"contactId":100,"inboxId":1,"status":"open","createdAt":1,"updatedAt":1}]}`)
+
+		client := newTestClient(mock)
+
+		conversations, err := client.ListAllConversations(context.Background(), &ConversationListQuery{
+			Limit:     50,
+			StatusIDs: []int{ConversationStatusOpen},
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, conversations)
+		assert.Len(t, conversations.Data, 1)
+	})
+
+	t.Run("error on subsequent page request", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpointList+"/conversations/list", http.StatusOK,
+				`{"data":[{"id":1,"contactId":100,"inboxId":1,"status":"open","createdAt":1,"updatedAt":1}],"links":{"next":"https://api.drift.com/conversations/list?page_token=page2"}}`).
+			addRoute("https://api.drift.com/conversations/list?page_token=page2", http.StatusInternalServerError, "")
+
+		client := newTestClient(mock)
+
+		conversations, err := client.ListAllConversations(context.Background(), nil)
+		require.Error(t, err)
+		assert.Nil(t, conversations)
+	})
+}
+
+// TestClient_ListConversationsByStatus tests the method ListConversationsByStatus()
+func TestClient_ListConversationsByStatus(t *testing.T) {
+	t.Parallel()
+
+	t.Run("filter by open status", func(t *testing.T) {
+		client := newTestClient(mockListConversations())
+
+		conversations, err := client.ListConversationsByStatus(context.Background(), ConversationStatusOpen, 25)
+		require.NoError(t, err)
+		assert.NotNil(t, conversations)
+		assert.Len(t, conversations.Data, 1)
+		assert.Equal(t, "open", conversations.Data[0].Status)
+	})
+
+	t.Run("filter by closed status", func(t *testing.T) {
+		client := newTestClient(mockListConversations())
+
+		conversations, err := client.ListConversationsByStatus(context.Background(), ConversationStatusClosed, 25)
+		require.NoError(t, err)
+		assert.NotNil(t, conversations)
+		assert.Len(t, conversations.Data, 1)
+		assert.Equal(t, "closed", conversations.Data[0].Status)
+	})
+
+	t.Run("filter by pending status", func(t *testing.T) {
+		client := newTestClient(mockListConversations())
+
+		conversations, err := client.ListConversationsByStatus(context.Background(), ConversationStatusPending, 25)
+		require.NoError(t, err)
+		assert.NotNil(t, conversations)
+		assert.Len(t, conversations.Data, 1)
+		assert.Equal(t, "pending", conversations.Data[0].Status)
+	})
+
+	t.Run("with custom limit", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpointList+"/conversations/list?limit=10&statusId=1", http.StatusOK,
+				`{"data":[{"id":1,"contactId":100,"inboxId":1,"status":"open","createdAt":1,"updatedAt":1}]}`)
+
+		client := newTestClient(mock)
+
+		conversations, err := client.ListConversationsByStatus(context.Background(), ConversationStatusOpen, 10)
+		require.NoError(t, err)
+		assert.NotNil(t, conversations)
+	})
+
+	t.Run("error handling", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpointList+"/conversations/list?limit=25&statusId=1", http.StatusInternalServerError, "")
+
+		client := newTestClient(mock)
+
+		conversations, err := client.ListConversationsByStatus(context.Background(), ConversationStatusOpen, 25)
+		require.Error(t, err)
+		assert.Nil(t, conversations)
+	})
+}
+
+// TestClient_ListConversationsByContactID tests the method ListConversationsByContactID()
+func TestClient_ListConversationsByContactID(t *testing.T) {
+	t.Parallel()
+
+	t.Run("find conversations matching contact id", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpointList+"/conversations/list?limit=50", http.StatusOK,
+				`{"data":[{"id":1,"contactId":100,"inboxId":1,"status":"open","createdAt":1,"updatedAt":1},{"id":2,"contactId":200,"inboxId":1,"status":"closed","createdAt":2,"updatedAt":2},{"id":3,"contactId":100,"inboxId":1,"status":"pending","createdAt":3,"updatedAt":3}]}`)
+
+		client := newTestClient(mock)
+
+		conversations, err := client.ListConversationsByContactID(context.Background(), 100, 50)
+		require.NoError(t, err)
+		assert.NotNil(t, conversations)
+		assert.Len(t, conversations.Data, 2)
+
+		// Both conversations should have contactId 100
+		for _, conv := range conversations.Data {
+			assert.Equal(t, uint64(100), conv.ContactID)
+		}
+	})
+
+	t.Run("no conversations match contact id", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpointList+"/conversations/list?limit=50", http.StatusOK,
+				`{"data":[{"id":1,"contactId":100,"inboxId":1,"status":"open","createdAt":1,"updatedAt":1}]}`)
+
+		client := newTestClient(mock)
+
+		conversations, err := client.ListConversationsByContactID(context.Background(), 999, 50)
+		require.NoError(t, err)
+		assert.NotNil(t, conversations)
+		assert.Empty(t, conversations.Data)
+	})
+
+	t.Run("error from list all conversations propagates", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpointList+"/conversations/list?limit=50", http.StatusInternalServerError, "")
+
+		client := newTestClient(mock)
+
+		conversations, err := client.ListConversationsByContactID(context.Background(), 100, 50)
+		require.Error(t, err)
+		assert.Nil(t, conversations)
+	})
+}
+
+// TestClient_GetConversationCount tests the method GetConversationCount()
+func TestClient_GetConversationCount(t *testing.T) {
+	t.Parallel()
+
+	t.Run("count with multiple conversations", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpointList+"/conversations/list", http.StatusOK,
+				`{"data":[{"id":1,"contactId":100,"inboxId":1,"status":"open","createdAt":1,"updatedAt":1},{"id":2,"contactId":200,"inboxId":1,"status":"closed","createdAt":2,"updatedAt":2},{"id":3,"contactId":300,"inboxId":1,"status":"pending","createdAt":3,"updatedAt":3}]}`)
+
+		client := newTestClient(mock)
+
+		count, err := client.GetConversationCount(context.Background())
+		require.NoError(t, err)
+		assert.Equal(t, 3, count)
+	})
+
+	t.Run("count with zero conversations", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpointList+"/conversations/list", http.StatusOK,
+				`{"data":[]}`)
+
+		client := newTestClient(mock)
+
+		count, err := client.GetConversationCount(context.Background())
+		require.NoError(t, err)
+		assert.Equal(t, 0, count)
+	})
+
+	t.Run("error from list all conversations propagates", func(t *testing.T) {
+		mock := newMockHTTPMulti().
+			addRoute(apiEndpointList+"/conversations/list", http.StatusInternalServerError, "")
+
+		client := newTestClient(mock)
+
+		count, err := client.GetConversationCount(context.Background())
+		require.Error(t, err)
+		assert.Equal(t, 0, count)
 	})
 }
 
