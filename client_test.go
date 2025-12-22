@@ -59,7 +59,7 @@ func TestNewClient_CustomHTTPClient(t *testing.T) {
 func ExampleNewClient() {
 	client := NewClient(testDataOAuthToken, nil, nil)
 	fmt.Println(client.Options.UserAgent)
-	// Output:go-drift: v0.0.3
+	// Output:go-drift: v1
 }
 
 // BenchmarkNewClient benchmarks the NewClient method
