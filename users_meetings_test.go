@@ -1,9 +1,7 @@
 package drift
 
 import (
-	"bytes"
 	"context"
-	"io"
 	"net/http"
 	"testing"
 
@@ -16,91 +14,33 @@ const (
 	testMaxStartTime = int64(1729551543006)
 )
 
-// mockHTTPGetMeetings for mocking requests
-type mockHTTPGetMeetings struct{}
-
-// Do is a mock http request
-func (m *mockHTTPGetMeetings) Do(req *http.Request) (*http.Response, error) {
-	resp := new(http.Response)
-	resp.StatusCode = http.StatusBadRequest
-
-	if req == nil {
-		return resp, errMissingRequest
-	}
-
-	// Get meetings endpoint with time params
-	expectedURL := apiEndpoint + "/users/meetings/org?min_start_time=1728946743006&max_start_time=1729551543006"
-	expectedURLWithLimit := apiEndpoint + "/users/meetings/org?min_start_time=1728946743006&max_start_time=1729551543006&limit=50"
-
-	if req.URL.String() == expectedURL || req.URL.String() == expectedURLWithLimit {
-		resp.StatusCode = http.StatusOK
-		resp.Body = io.NopCloser(bytes.NewBufferString(`{"data":[{"conversationId":4019061071,"agentId":2322756,"orgId":12345,"status":"ACTIVE","meetingSource":"EMAIL_DROP","schedulerId":123456,"eventId":"event-123","slug":"meeting-slug","slotStart":1726491600000,"slotEnd":1726493400000,"updatedAt":1726491500000,"scheduledAt":1726490000000,"meetingType":"New Meeting","endUserTimeZone":"America/New_York","conferenceType":"ZOOM","isRecurring":false,"isPrivate":false},{"conversationId":4019061072,"agentId":2322757,"orgId":12345,"status":"CANCELED","meetingSource":"WIDGET","schedulerId":123457,"eventId":"event-456","slug":"meeting-slug-2","slotStart":1726578000000,"slotEnd":1726579800000,"updatedAt":1726577500000,"scheduledAt":1726576000000,"meetingType":"Follow Up","endUserTimeZone":"America/Los_Angeles","meetingNotes":"Test notes","bookedBy":2322756,"conferenceType":"GOOGLE_MEET","isRecurring":true,"isPrivate":true}]}`))
-	}
-
-	return resp, nil
+// mockGetMeetings returns a multi-route mock for meetings operations
+func mockGetMeetings() *mockHTTPMulti {
+	return newMockHTTPMulti().
+		addRoute(apiEndpoint+"/users/meetings/org?min_start_time=1728946743006&max_start_time=1729551543006", http.StatusOK,
+			`{"data":[{"conversationId":4019061071,"agentId":2322756,"orgId":12345,"status":"ACTIVE","meetingSource":"EMAIL_DROP","schedulerId":123456,"eventId":"event-123","slug":"meeting-slug","slotStart":1726491600000,"slotEnd":1726493400000,"updatedAt":1726491500000,"scheduledAt":1726490000000,"meetingType":"New Meeting","endUserTimeZone":"America/New_York","conferenceType":"ZOOM","isRecurring":false,"isPrivate":false},{"conversationId":4019061072,"agentId":2322757,"orgId":12345,"status":"CANCELED","meetingSource":"WIDGET","schedulerId":123457,"eventId":"event-456","slug":"meeting-slug-2","slotStart":1726578000000,"slotEnd":1726579800000,"updatedAt":1726577500000,"scheduledAt":1726576000000,"meetingType":"Follow Up","endUserTimeZone":"America/Los_Angeles","meetingNotes":"Test notes","bookedBy":2322756,"conferenceType":"GOOGLE_MEET","isRecurring":true,"isPrivate":true}]}`).
+		addRoute(apiEndpoint+"/users/meetings/org?min_start_time=1728946743006&max_start_time=1729551543006&limit=50", http.StatusOK,
+			`{"data":[{"conversationId":4019061071,"agentId":2322756,"orgId":12345,"status":"ACTIVE","meetingSource":"EMAIL_DROP","schedulerId":123456,"eventId":"event-123","slug":"meeting-slug","slotStart":1726491600000,"slotEnd":1726493400000,"updatedAt":1726491500000,"scheduledAt":1726490000000,"meetingType":"New Meeting","endUserTimeZone":"America/New_York","conferenceType":"ZOOM","isRecurring":false,"isPrivate":false}]}`)
 }
 
-// mockHTTPGetMeetingsEmpty for mocking empty response
-type mockHTTPGetMeetingsEmpty struct{}
-
-// Do is a mock http request
-func (m *mockHTTPGetMeetingsEmpty) Do(req *http.Request) (*http.Response, error) {
-	resp := new(http.Response)
-	resp.StatusCode = http.StatusBadRequest
-
-	if req == nil {
-		return resp, errMissingRequest
-	}
-
-	expectedURL := apiEndpoint + "/users/meetings/org?min_start_time=1728946743006&max_start_time=1729551543006"
-	if req.URL.String() == expectedURL {
-		resp.StatusCode = http.StatusOK
-		resp.Body = io.NopCloser(bytes.NewBufferString(`{"data":[]}`))
-	}
-
-	return resp, nil
+// mockGetMeetingsEmpty returns a mock for empty meetings
+func mockGetMeetingsEmpty() *mockHTTPMulti {
+	return newMockHTTPMulti().
+		addRoute(apiEndpoint+"/users/meetings/org?min_start_time=1728946743006&max_start_time=1729551543006", http.StatusOK,
+			`{"data":[]}`)
 }
 
-// mockHTTPGetMeetingsUnauthorized for mocking unauthorized response
-type mockHTTPGetMeetingsUnauthorized struct{}
-
-// Do is a mock http request
-func (m *mockHTTPGetMeetingsUnauthorized) Do(req *http.Request) (*http.Response, error) {
-	resp := new(http.Response)
-	resp.StatusCode = http.StatusBadRequest
-
-	if req == nil {
-		return resp, errMissingRequest
-	}
-
-	expectedURL := apiEndpoint + "/users/meetings/org?min_start_time=1728946743006&max_start_time=1729551543006"
-	if req.URL.String() == expectedURL {
-		resp.StatusCode = http.StatusUnauthorized
-		resp.Body = io.NopCloser(nil)
-	}
-
-	return resp, nil
+// mockGetMeetingsUnauthorized returns a mock for unauthorized response
+func mockGetMeetingsUnauthorized() *mockHTTPMulti {
+	return newMockHTTPMulti().
+		addRoute(apiEndpoint+"/users/meetings/org?min_start_time=1728946743006&max_start_time=1729551543006", http.StatusUnauthorized, "")
 }
 
-// mockHTTPGetMeetingsBadJSON for mocking bad JSON response
-type mockHTTPGetMeetingsBadJSON struct{}
-
-// Do is a mock http request
-func (m *mockHTTPGetMeetingsBadJSON) Do(req *http.Request) (*http.Response, error) {
-	resp := new(http.Response)
-	resp.StatusCode = http.StatusBadRequest
-
-	if req == nil {
-		return resp, errMissingRequest
-	}
-
-	expectedURL := apiEndpoint + "/users/meetings/org?min_start_time=1728946743006&max_start_time=1729551543006"
-	if req.URL.String() == expectedURL {
-		resp.StatusCode = http.StatusOK
-		resp.Body = io.NopCloser(bytes.NewBufferString(`{"data":[{"conversationId":4019061071"status":"Bad JSON"}]}`))
-	}
-
-	return resp, nil
+// mockGetMeetingsBadJSON returns a mock for bad JSON response
+func mockGetMeetingsBadJSON() *mockHTTPMulti {
+	return newMockHTTPMulti().
+		addRoute(apiEndpoint+"/users/meetings/org?min_start_time=1728946743006&max_start_time=1729551543006", http.StatusOK,
+			`{"data":[{"conversationId":4019061071"status":"Bad JSON"}]}`)
 }
 
 // TestMeetingsQuery_BuildURL tests the method BuildURL()
@@ -154,7 +94,7 @@ func TestClient_GetBookedMeetings(t *testing.T) {
 	t.Parallel()
 
 	t.Run("get booked meetings", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetMeetings{})
+		client := newTestClient(mockGetMeetings())
 
 		query := &MeetingsQuery{
 			MinStartTime: testMinStartTime,
@@ -193,7 +133,7 @@ func TestClient_GetBookedMeetings(t *testing.T) {
 	})
 
 	t.Run("get booked meetings with limit", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetMeetings{})
+		client := newTestClient(mockGetMeetings())
 
 		query := &MeetingsQuery{
 			MinStartTime: testMinStartTime,
@@ -207,7 +147,7 @@ func TestClient_GetBookedMeetings(t *testing.T) {
 	})
 
 	t.Run("empty meetings", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetMeetingsEmpty{})
+		client := newTestClient(mockGetMeetingsEmpty())
 
 		query := &MeetingsQuery{
 			MinStartTime: testMinStartTime,
@@ -221,7 +161,7 @@ func TestClient_GetBookedMeetings(t *testing.T) {
 	})
 
 	t.Run("missing min_start_time", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetMeetings{})
+		client := newTestClient(mockGetMeetings())
 
 		query := &MeetingsQuery{
 			MaxStartTime: testMaxStartTime,
@@ -234,7 +174,7 @@ func TestClient_GetBookedMeetings(t *testing.T) {
 	})
 
 	t.Run("missing max_start_time", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetMeetings{})
+		client := newTestClient(mockGetMeetings())
 
 		query := &MeetingsQuery{
 			MinStartTime: testMinStartTime,
@@ -247,7 +187,7 @@ func TestClient_GetBookedMeetings(t *testing.T) {
 	})
 
 	t.Run("unauthorized response", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetMeetingsUnauthorized{})
+		client := newTestClient(mockGetMeetingsUnauthorized())
 
 		query := &MeetingsQuery{
 			MinStartTime: testMinStartTime,
@@ -260,7 +200,7 @@ func TestClient_GetBookedMeetings(t *testing.T) {
 	})
 
 	t.Run("bad json response", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetMeetingsBadJSON{})
+		client := newTestClient(mockGetMeetingsBadJSON())
 
 		query := &MeetingsQuery{
 			MinStartTime: testMinStartTime,
@@ -278,7 +218,7 @@ func TestClient_GetBookedMeetingsRaw(t *testing.T) {
 	t.Parallel()
 
 	t.Run("missing min_start_time", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetMeetings{})
+		client := newTestClient(mockGetMeetings())
 
 		query := &MeetingsQuery{
 			MaxStartTime: testMaxStartTime,
@@ -291,7 +231,7 @@ func TestClient_GetBookedMeetingsRaw(t *testing.T) {
 	})
 
 	t.Run("get booked meetings raw", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetMeetings{})
+		client := newTestClient(mockGetMeetings())
 
 		query := &MeetingsQuery{
 			MinStartTime: testMinStartTime,
@@ -311,7 +251,7 @@ func TestClient_GetBookedMeetingsRaw(t *testing.T) {
 
 // BenchmarkClient_GetBookedMeetings benchmarks the GetBookedMeetings method
 func BenchmarkClient_GetBookedMeetings(b *testing.B) {
-	client := newTestClient(&mockHTTPGetMeetings{})
+	client := newTestClient(mockGetMeetings())
 	query := &MeetingsQuery{
 		MinStartTime: testMinStartTime,
 		MaxStartTime: testMaxStartTime,
@@ -323,7 +263,7 @@ func BenchmarkClient_GetBookedMeetings(b *testing.B) {
 
 // BenchmarkClient_GetBookedMeetingsRaw benchmarks the GetBookedMeetingsRaw method
 func BenchmarkClient_GetBookedMeetingsRaw(b *testing.B) {
-	client := newTestClient(&mockHTTPGetMeetings{})
+	client := newTestClient(mockGetMeetings())
 	query := &MeetingsQuery{
 		MinStartTime: testMinStartTime,
 		MaxStartTime: testMaxStartTime,

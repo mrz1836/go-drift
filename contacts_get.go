@@ -3,13 +3,9 @@ package drift
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 )
-
-// ErrMissingContactIdentifier is returned when contact id, email or external id is not provided.
-var ErrMissingContactIdentifier = errors.New("contact id, email or external id is required")
 
 // ContactQuery is how we want to get a contact(s)
 type ContactQuery struct {

@@ -1,9 +1,7 @@
 package drift
 
 import (
-	"bytes"
 	"context"
-	"io"
 	"net/http"
 	"testing"
 
@@ -11,34 +9,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockHTTPUpdateUser for mocking requests
-type mockHTTPUpdateUser struct{}
-
-// Do is a mock http request
-func (m *mockHTTPUpdateUser) Do(req *http.Request) (*http.Response, error) {
-	resp := new(http.Response)
-	resp.StatusCode = http.StatusBadRequest
-
-	if req == nil {
-		return resp, errMissingRequest
-	}
-
-	// Update user endpoint
-	if req.URL.String() == apiEndpoint+"/users/update?userId=228225" && req.Method == http.MethodPatch {
-		resp.StatusCode = http.StatusOK
-		resp.Body = io.NopCloser(bytes.NewBufferString(`{"data":{"id":228225,"orgId":12345,"name":"Updated User","alias":"updateduser","email":"updated@example.com","phone":"555-999-8888","locale":"en-US","availability":"OFFLINE","role":"admin","timeZone":"America/New_York","avatarUrl":"https://example.com/new-avatar.png","verified":true,"bot":false,"createdAt":1606273669631,"updatedAt":1614550516644}}`))
-	} else if req.URL.String() == apiEndpoint+"/users/update?userId=111111" && req.Method == http.MethodPatch {
-		resp.StatusCode = http.StatusBadRequest
-		resp.Body = io.NopCloser(nil)
-	} else if req.URL.String() == apiEndpoint+"/users/update?userId=222222" && req.Method == http.MethodPatch {
-		resp.StatusCode = http.StatusUnauthorized
-		resp.Body = io.NopCloser(nil)
-	} else if req.URL.String() == apiEndpoint+"/users/update?userId=333333" && req.Method == http.MethodPatch {
-		resp.StatusCode = http.StatusOK
-		resp.Body = io.NopCloser(bytes.NewBufferString(`{"data":{"id":333333"name":"Bad JSON"}}`))
-	}
-
-	return resp, nil
+// mockUpdateUser returns a multi-route mock for user update operations
+func mockUpdateUser() *mockHTTPMulti {
+	return newMockHTTPMulti().
+		addRoute(apiEndpoint+"/users/update?userId=228225", http.StatusOK,
+			`{"data":{"id":228225,"orgId":12345,"name":"Updated User","alias":"updateduser","email":"updated@example.com","phone":"555-999-8888","locale":"en-US","availability":"OFFLINE","role":"admin","timeZone":"America/New_York","avatarUrl":"https://example.com/new-avatar.png","verified":true,"bot":false,"createdAt":1606273669631,"updatedAt":1614550516644}}`).
+		addRoute(apiEndpoint+"/users/update?userId=111111", http.StatusBadRequest, "").
+		addRoute(apiEndpoint+"/users/update?userId=222222", http.StatusUnauthorized, "").
+		addRoute(apiEndpoint+"/users/update?userId=333333", http.StatusOK,
+			`{"data":{"id":333333"name":"Bad JSON"}}`)
 }
 
 // TestClient_UpdateUser tests the method UpdateUser()
@@ -46,7 +25,7 @@ func TestClient_UpdateUser(t *testing.T) {
 	t.Parallel()
 
 	t.Run("update a valid user", func(t *testing.T) {
-		client := newTestClient(&mockHTTPUpdateUser{})
+		client := newTestClient(mockUpdateUser())
 
 		fields := &UserUpdateFields{
 			Name:         "Updated User",
@@ -73,7 +52,7 @@ func TestClient_UpdateUser(t *testing.T) {
 	})
 
 	t.Run("missing user id", func(t *testing.T) {
-		client := newTestClient(&mockHTTPUpdateUser{})
+		client := newTestClient(mockUpdateUser())
 
 		fields := &UserUpdateFields{
 			Name: "Updated User",
@@ -86,7 +65,7 @@ func TestClient_UpdateUser(t *testing.T) {
 	})
 
 	t.Run("bad request response", func(t *testing.T) {
-		client := newTestClient(&mockHTTPUpdateUser{})
+		client := newTestClient(mockUpdateUser())
 
 		fields := &UserUpdateFields{
 			Name: "Updated User",
@@ -98,7 +77,7 @@ func TestClient_UpdateUser(t *testing.T) {
 	})
 
 	t.Run("unauthorized response", func(t *testing.T) {
-		client := newTestClient(&mockHTTPUpdateUser{})
+		client := newTestClient(mockUpdateUser())
 
 		fields := &UserUpdateFields{
 			Name: "Updated User",
@@ -110,7 +89,7 @@ func TestClient_UpdateUser(t *testing.T) {
 	})
 
 	t.Run("bad json response", func(t *testing.T) {
-		client := newTestClient(&mockHTTPUpdateUser{})
+		client := newTestClient(mockUpdateUser())
 
 		fields := &UserUpdateFields{
 			Name: "Updated User",
@@ -127,7 +106,7 @@ func TestClient_UpdateUserRaw(t *testing.T) {
 	t.Parallel()
 
 	t.Run("missing user id", func(t *testing.T) {
-		client := newTestClient(&mockHTTPUpdateUser{})
+		client := newTestClient(mockUpdateUser())
 
 		fields := &UserUpdateFields{
 			Name: "Updated User",
@@ -140,7 +119,7 @@ func TestClient_UpdateUserRaw(t *testing.T) {
 	})
 
 	t.Run("update a valid user", func(t *testing.T) {
-		client := newTestClient(&mockHTTPUpdateUser{})
+		client := newTestClient(mockUpdateUser())
 
 		fields := &UserUpdateFields{
 			Name:         "Updated User",
@@ -160,7 +139,7 @@ func TestClient_UpdateUserRaw(t *testing.T) {
 
 // BenchmarkClient_UpdateUser benchmarks the UpdateUser method
 func BenchmarkClient_UpdateUser(b *testing.B) {
-	client := newTestClient(&mockHTTPUpdateUser{})
+	client := newTestClient(mockUpdateUser())
 	fields := &UserUpdateFields{
 		Name: "Updated User",
 	}
@@ -171,7 +150,7 @@ func BenchmarkClient_UpdateUser(b *testing.B) {
 
 // BenchmarkClient_UpdateUserRaw benchmarks the UpdateUserRaw method
 func BenchmarkClient_UpdateUserRaw(b *testing.B) {
-	client := newTestClient(&mockHTTPUpdateUser{})
+	client := newTestClient(mockUpdateUser())
 	fields := &UserUpdateFields{
 		Name: "Updated User",
 	}

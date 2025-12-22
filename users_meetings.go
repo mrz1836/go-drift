@@ -2,17 +2,9 @@ package drift
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 )
-
-// ErrMissingMinStartTime is returned when min_start_time is not provided.
-var ErrMissingMinStartTime = errors.New("min_start_time is required")
-
-// ErrMissingMaxStartTime is returned when max_start_time is not provided.
-var ErrMissingMaxStartTime = errors.New("max_start_time is required")
 
 // MeetingsQuery is the query parameters for getting booked meetings
 type MeetingsQuery struct {
@@ -50,7 +42,7 @@ func (c *Client) GetBookedMeetings(ctx context.Context, query *MeetingsQuery) (m
 	}
 
 	meetings = new(Meetings)
-	if err = json.Unmarshal(response.BodyContents, &meetings); err != nil {
+	if err = response.UnmarshalTo(&meetings); err != nil {
 		return nil, err
 	}
 

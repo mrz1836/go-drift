@@ -2,7 +2,6 @@ package drift
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 )
 
@@ -15,7 +14,7 @@ func (c *Client) ListUsers(ctx context.Context) (users *Users, err error) {
 	}
 
 	users = new(Users)
-	if err = json.Unmarshal(response.BodyContents, &users); err != nil {
+	if err = response.UnmarshalTo(&users); err != nil {
 		return nil, err
 	}
 

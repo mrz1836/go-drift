@@ -2,7 +2,6 @@ package drift
 
 import (
 	"context"
-	"encoding/json"
 )
 
 // UpdateContact will fire the HTTP request to update an existing contact
@@ -19,7 +18,7 @@ func (c *Client) UpdateContact(ctx context.Context, contactID uint64,
 	}
 
 	// Parse the request
-	err = json.Unmarshal(response.BodyContents, &contact)
+	err = response.UnmarshalTo(&contact)
 	return contact, err
 }
 

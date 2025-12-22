@@ -2,19 +2,11 @@ package drift
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 )
-
-// ErrMissingUserID is returned when user id is not provided.
-var ErrMissingUserID = errors.New("user id is required")
-
-// ErrTooManyUserIDs is returned when more than 20 user IDs are provided.
-var ErrTooManyUserIDs = errors.New("maximum of 20 user IDs allowed")
 
 // GetUser will get a single user by ID
 // specs: https://devdocs.drift.com/docs/retrieving-user
@@ -25,7 +17,7 @@ func (c *Client) GetUser(ctx context.Context, userID uint64) (user *User, err er
 	}
 
 	user = new(User)
-	if err = json.Unmarshal(response.BodyContents, &user); err != nil {
+	if err = response.UnmarshalTo(&user); err != nil {
 		return nil, err
 	}
 
@@ -35,8 +27,8 @@ func (c *Client) GetUser(ctx context.Context, userID uint64) (user *User, err er
 // GetUserRaw will fire the HTTP request to retrieve the raw user data
 // specs: https://devdocs.drift.com/docs/retrieving-user
 func (c *Client) GetUserRaw(ctx context.Context, userID uint64) (*RequestResponse, error) {
-	if userID == 0 {
-		return nil, ErrMissingUserID
+	if err := requireID(userID, ErrMissingUserID); err != nil {
+		return nil, err
 	}
 
 	queryURL := fmt.Sprintf("%s/users/%d", apiEndpoint, userID)
@@ -61,7 +53,7 @@ func (c *Client) GetUsers(ctx context.Context, userIDs []uint64) (users *Users, 
 
 	// API returns a map structure for multiple users
 	usersMap := new(UsersMap)
-	if err = json.Unmarshal(response.BodyContents, &usersMap); err != nil {
+	if err = response.UnmarshalTo(&usersMap); err != nil {
 		return nil, err
 	}
 

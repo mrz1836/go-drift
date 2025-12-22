@@ -6,15 +6,9 @@ import (
 	"net/http"
 )
 
-// UnsubscribeResponse represents the response from unsubscribing emails
-type UnsubscribeResponse struct {
-	OK     bool   `json:"ok,omitempty"`
-	Result string `json:"result,omitempty"`
-}
-
 // UnsubscribeEmails will unsubscribe a list of email addresses from Drift emails
 // specs: https://devdocs.drift.com/docs/unsubscribe-contacts-from-emails
-func (c *Client) UnsubscribeEmails(ctx context.Context, emails []string) (response *UnsubscribeResponse, err error) {
+func (c *Client) UnsubscribeEmails(ctx context.Context, emails []string) (response *StandardResponse, err error) {
 	// Create and fire the request
 	var reqResponse *RequestResponse
 	if reqResponse, err = c.UnsubscribeEmailsRaw(ctx, emails); err != nil {
@@ -22,7 +16,7 @@ func (c *Client) UnsubscribeEmails(ctx context.Context, emails []string) (respon
 	}
 
 	// Parse the response
-	err = json.Unmarshal(reqResponse.BodyContents, &response)
+	err = reqResponse.UnmarshalTo(&response)
 	return response, err
 }
 

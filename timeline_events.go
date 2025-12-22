@@ -46,6 +46,6 @@ func (c *Client) CreateTimelineEvent(ctx context.Context,
 	}
 
 	// Parse the request
-	err = json.Unmarshal(resp.BodyContents, &response)
+	err = resp.UnmarshalTo(&response)
 	return response, err
 }

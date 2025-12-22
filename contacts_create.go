@@ -19,7 +19,7 @@ func (c *Client) CreateContact(ctx context.Context, attributes *ContactFields) (
 	}
 
 	// Parse the request
-	err = json.Unmarshal(response.BodyContents, &contact)
+	err = response.UnmarshalTo(&contact)
 	return contact, err
 }
 

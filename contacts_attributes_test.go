@@ -1,9 +1,7 @@
 package drift
 
 import (
-	"bytes"
 	"context"
-	"io"
 	"net/http"
 	"testing"
 
@@ -11,23 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockHTTPListCustomAttributes for mocking requests
-type mockHTTPListCustomAttributes struct{}
-
-// Do is a mock http request
-func (m *mockHTTPListCustomAttributes) Do(req *http.Request) (*http.Response, error) {
-	resp := new(http.Response)
-	resp.StatusCode = http.StatusBadRequest
-
-	// No req found
-	if req == nil {
-		return resp, errMissingRequest
-	}
-
-	// Valid response for list custom attributes
-	if req.URL.String() == apiEndpoint+"/contacts/attributes" && req.Method == http.MethodGet {
-		resp.StatusCode = http.StatusOK
-		resp.Body = io.NopCloser(bytes.NewBufferString(`{
+// mockListCustomAttributes returns a mock for custom attributes operations
+func mockListCustomAttributes() *mockHTTP {
+	return newMockHTTP(
+		withStatus(http.StatusOK),
+		withBody(`{
 			"data": {
 				"properties": [
 					{"type": "STRING", "displayName": "Age", "name": "age"},
@@ -35,41 +21,16 @@ func (m *mockHTTPListCustomAttributes) Do(req *http.Request) (*http.Response, er
 					{"type": "NUMERIC", "displayName": "Score", "name": "score"}
 				]
 			}
-		}`))
-	}
-
-	return resp, nil
+		}`),
+	)
 }
 
-// mockHTTPListCustomAttributesEmpty for testing empty response
-type mockHTTPListCustomAttributesEmpty struct{}
-
-// Do returns an empty properties array
-func (m *mockHTTPListCustomAttributesEmpty) Do(req *http.Request) (*http.Response, error) {
-	if req == nil {
-		return nil, errMissingRequest
-	}
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body:       io.NopCloser(bytes.NewBufferString(`{"data": {"properties": []}}`)),
-	}, nil
-}
-
-// mockHTTPListCustomAttributesError for testing error scenarios
-type mockHTTPListCustomAttributesError struct {
-	statusCode int
-	body       string
-}
-
-// Do returns a configurable error response
-func (m *mockHTTPListCustomAttributesError) Do(req *http.Request) (*http.Response, error) {
-	if req == nil {
-		return nil, errMissingRequest
-	}
-	return &http.Response{
-		StatusCode: m.statusCode,
-		Body:       io.NopCloser(bytes.NewBufferString(m.body)),
-	}, nil
+// mockListCustomAttributesEmpty returns a mock with empty properties
+func mockListCustomAttributesEmpty() *mockHTTP {
+	return newMockHTTP(
+		withStatus(http.StatusOK),
+		withBody(`{"data": {"properties": []}}`),
+	)
 }
 
 // TestClient_ListCustomAttributes tests the method ListCustomAttributes()
@@ -77,7 +38,7 @@ func TestClient_ListCustomAttributes(t *testing.T) {
 	t.Parallel()
 
 	t.Run("list custom attributes successfully", func(t *testing.T) {
-		client := newTestClient(&mockHTTPListCustomAttributes{})
+		client := newTestClient(mockListCustomAttributes())
 
 		response, err := client.ListCustomAttributes(context.Background())
 		require.NoError(t, err)
@@ -102,7 +63,7 @@ func TestClient_ListCustomAttributes(t *testing.T) {
 	})
 
 	t.Run("list custom attributes returns empty list", func(t *testing.T) {
-		client := newTestClient(&mockHTTPListCustomAttributesEmpty{})
+		client := newTestClient(mockListCustomAttributesEmpty())
 
 		response, err := client.ListCustomAttributes(context.Background())
 		require.NoError(t, err)
@@ -112,10 +73,7 @@ func TestClient_ListCustomAttributes(t *testing.T) {
 	})
 
 	t.Run("returns error when ListCustomAttributesRaw fails", func(t *testing.T) {
-		client := newTestClient(&mockHTTPListCustomAttributesError{
-			statusCode: http.StatusBadRequest,
-			body:       "",
-		})
+		client := newTestClient(newMockError(http.StatusBadRequest))
 
 		response, err := client.ListCustomAttributes(context.Background())
 		require.Error(t, err)
@@ -124,10 +82,7 @@ func TestClient_ListCustomAttributes(t *testing.T) {
 	})
 
 	t.Run("returns error on 401 unauthorized", func(t *testing.T) {
-		client := newTestClient(&mockHTTPListCustomAttributesError{
-			statusCode: http.StatusUnauthorized,
-			body:       "",
-		})
+		client := newTestClient(newMockError(http.StatusUnauthorized))
 
 		response, err := client.ListCustomAttributes(context.Background())
 		require.Error(t, err)
@@ -136,10 +91,7 @@ func TestClient_ListCustomAttributes(t *testing.T) {
 	})
 
 	t.Run("returns error on 404 not found", func(t *testing.T) {
-		client := newTestClient(&mockHTTPListCustomAttributesError{
-			statusCode: http.StatusNotFound,
-			body:       "",
-		})
+		client := newTestClient(newMockError(http.StatusNotFound))
 
 		response, err := client.ListCustomAttributes(context.Background())
 		require.Error(t, err)
@@ -148,10 +100,7 @@ func TestClient_ListCustomAttributes(t *testing.T) {
 	})
 
 	t.Run("returns error on response unmarshal failure", func(t *testing.T) {
-		client := newTestClient(&mockHTTPListCustomAttributesError{
-			statusCode: http.StatusOK,
-			body:       `{"invalid json`,
-		})
+		client := newTestClient(newMockSuccess(`{"invalid json`))
 
 		response, err := client.ListCustomAttributes(context.Background())
 		require.Error(t, err)
@@ -164,7 +113,7 @@ func TestClient_ListCustomAttributesRaw(t *testing.T) {
 	t.Parallel()
 
 	t.Run("lists custom attributes successfully", func(t *testing.T) {
-		client := newTestClient(&mockHTTPListCustomAttributes{})
+		client := newTestClient(mockListCustomAttributes())
 
 		response, err := client.ListCustomAttributesRaw(context.Background())
 		require.NoError(t, err)
@@ -175,10 +124,7 @@ func TestClient_ListCustomAttributesRaw(t *testing.T) {
 	})
 
 	t.Run("returns error on HTTP failure", func(t *testing.T) {
-		client := newTestClient(&mockHTTPListCustomAttributesError{
-			statusCode: http.StatusBadRequest,
-			body:       "",
-		})
+		client := newTestClient(newMockError(http.StatusBadRequest))
 
 		response, err := client.ListCustomAttributesRaw(context.Background())
 		require.Error(t, err)
@@ -187,7 +133,7 @@ func TestClient_ListCustomAttributesRaw(t *testing.T) {
 	})
 
 	t.Run("uses correct endpoint URL", func(t *testing.T) {
-		client := newTestClient(&mockHTTPListCustomAttributes{})
+		client := newTestClient(mockListCustomAttributes())
 
 		response, err := client.ListCustomAttributesRaw(context.Background())
 		require.NoError(t, err)
@@ -195,7 +141,7 @@ func TestClient_ListCustomAttributesRaw(t *testing.T) {
 	})
 
 	t.Run("uses GET method", func(t *testing.T) {
-		client := newTestClient(&mockHTTPListCustomAttributes{})
+		client := newTestClient(mockListCustomAttributes())
 
 		response, err := client.ListCustomAttributesRaw(context.Background())
 		require.NoError(t, err)
@@ -205,7 +151,7 @@ func TestClient_ListCustomAttributesRaw(t *testing.T) {
 
 // BenchmarkClient_ListCustomAttributes benchmarks the ListCustomAttributes method
 func BenchmarkClient_ListCustomAttributes(b *testing.B) {
-	client := newTestClient(&mockHTTPListCustomAttributes{})
+	client := newTestClient(mockListCustomAttributes())
 	for i := 0; i < b.N; i++ {
 		_, _ = client.ListCustomAttributes(context.Background())
 	}
@@ -213,7 +159,7 @@ func BenchmarkClient_ListCustomAttributes(b *testing.B) {
 
 // BenchmarkClient_ListCustomAttributesRaw benchmarks the ListCustomAttributesRaw method
 func BenchmarkClient_ListCustomAttributesRaw(b *testing.B) {
-	client := newTestClient(&mockHTTPListCustomAttributes{})
+	client := newTestClient(mockListCustomAttributes())
 	for i := 0; i < b.N; i++ {
 		_, _ = client.ListCustomAttributesRaw(context.Background())
 	}

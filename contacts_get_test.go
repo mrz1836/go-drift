@@ -1,10 +1,8 @@
 package drift
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"testing"
 
@@ -12,36 +10,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockHTTPGetContacts for mocking requests
-type mockHTTPGetContacts struct{}
-
-// Do is a mock http request
-func (m *mockHTTPGetContacts) Do(req *http.Request) (*http.Response, error) {
-	resp := new(http.Response)
-	resp.StatusCode = http.StatusBadRequest
-
-	// No req found
-	if req == nil {
-		return resp, errMissingRequest
-	}
-
-	// Valid response
-	if req.URL.String() == apiEndpoint+"/contacts/"+testContactID {
-		resp.StatusCode = http.StatusOK
-		resp.Body = io.NopCloser(bytes.NewBufferString(`{"data":{"id":` + testContactID + `,"createdAt":1606273669631,"attributes":{"recent_entrance_page_title":"Page Title","original_conversation_started_page_title":"Page Title","original_entrance_page_url":"https://google.com","recent_conversation_started_page_title":"Another Page Title","events":{},"phone":"` + testContactPhone + `","recent_medium":"social","_end_user_version":17899,"ip":"68.100.100.100,23.23.23.23","tags":[],"last_contacted":1613855943522,"_classification":"Engaged","recent_referer_url":"t.co","recent_source":"Twitter","socialProfiles":{},"name":"` + testContactName + `","original_referer_url":"https://googe.com","_END_USER_VERSION":17899,"_calculated_version":17899,"last_context_location":"{\"city\":\"NYC\",\"region\":\"New York\",\"country\":\"US\",\"countryName\":\"United States\",\"postalCode\":\"10901\",\"latitude\":25.5397,\"longitude\":-84.5151}","recent_conversation_started_page_url":"google.com","email":"` + testContactEmail + `","start_date":1606273669631,"original_ip":"12.12.12.12","recent_entrance_page_url":"https://google.com","externalId":"123","original_conversation_started_page_url":"google.com","original_entrance_page_title":"Page Title","last_active":1614550516644}}}`))
-	} else if req.URL.String() == apiEndpoint+"/contacts/"+testContactIDBadRequest {
-		resp.StatusCode = http.StatusBadRequest
-		resp.Body = io.NopCloser(nil)
-	} else if req.URL.String() == apiEndpoint+"/contacts/"+testContactIDUnauthorized {
-		resp.StatusCode = http.StatusUnauthorized
-		resp.Body = io.NopCloser(nil)
-	} else if req.URL.String() == apiEndpoint+"/contacts/"+testContactIDBadJSON {
-		resp.StatusCode = http.StatusOK
-		resp.Body = io.NopCloser(bytes.NewBufferString(`{"data":{"id":` + testContactIDBadJSON + `,"createdAt":1606273669631"attributes":{"recent_entrance_page_title""Page Title""original_conversation_started_page_title""Page Title","original_entrance_page_url":"https://google.com","recent_conversation_started_page_title":"Another Page Title","events":{},"recent_medium":"social","_end_user_version":17899,"ip":"68.100.100.100,23.23.23.23","tags":[],"last_contacted":1613855943522,"_classification":"Engaged","recent_referer_url":"t.co","recent_source":"Twitter","socialProfiles":{},"name":"` + testContactName + `","original_referer_url":"https://googe.com","_END_USER_VERSION":17899,"_calculated_version":17899,"last_context_location":"{\"city\":\"NYC\",\"region\":\"New York\",\"country\":\"US\",\"countryName\":\"United States\",\"postalCode\":\"10901\",\"latitude\":25.5397,\"longitude\":-84.5151}","recent_conversation_started_page_url":"google.com","email":"` + testContactEmail + `","start_date":1606273669631,"original_ip":"12.12.12.12","recent_entrance_page_url":"https://google.com","externalId":"123","original_conversation_started_page_url":"google.com","original_entrance_page_title":"Page Title","last_active":1614550516644}}}`))
-	}
-
-	// Default is valid
-	return resp, nil
+// mockGetContacts returns a multi-route mock for contact GET operations
+func mockGetContacts() *mockHTTPMulti {
+	return newMockHTTPMulti().
+		addRoute(apiEndpoint+"/contacts/"+testContactID, http.StatusOK,
+			`{"data":{"id":`+testContactID+`,"createdAt":1606273669631,"attributes":{"recent_entrance_page_title":"Page Title","original_conversation_started_page_title":"Page Title","original_entrance_page_url":"https://google.com","recent_conversation_started_page_title":"Another Page Title","events":{},"phone":"`+testContactPhone+`","recent_medium":"social","_end_user_version":17899,"ip":"68.100.100.100,23.23.23.23","tags":[],"last_contacted":1613855943522,"_classification":"Engaged","recent_referer_url":"t.co","recent_source":"Twitter","socialProfiles":{},"name":"`+testContactName+`","original_referer_url":"https://googe.com","_END_USER_VERSION":17899,"_calculated_version":17899,"last_context_location":"{\"city\":\"NYC\",\"region\":\"New York\",\"country\":\"US\",\"countryName\":\"United States\",\"postalCode\":\"10901\",\"latitude\":25.5397,\"longitude\":-84.5151}","recent_conversation_started_page_url":"google.com","email":"`+testContactEmail+`","start_date":1606273669631,"original_ip":"12.12.12.12","recent_entrance_page_url":"https://google.com","externalId":"123","original_conversation_started_page_url":"google.com","original_entrance_page_title":"Page Title","last_active":1614550516644}}}`).
+		addRoute(apiEndpoint+"/contacts/"+testContactIDBadRequest, http.StatusBadRequest, "").
+		addRoute(apiEndpoint+"/contacts/"+testContactIDUnauthorized, http.StatusUnauthorized, "").
+		addRoute(apiEndpoint+"/contacts/"+testContactIDBadJSON, http.StatusOK,
+			`{"data":{"id":`+testContactIDBadJSON+`,"createdAt":1606273669631"attributes":{"recent_entrance_page_title""Page Title"`)
 }
 
 // TestClient_GetContacts tests the method GetContacts()
@@ -49,10 +26,8 @@ func TestClient_GetContacts(t *testing.T) {
 	t.Parallel()
 
 	t.Run("get a valid contact by id", func(t *testing.T) {
-		// Create a client
-		client := newTestClient(&mockHTTPGetContacts{})
+		client := newTestClient(mockGetContacts())
 
-		// Create a req
 		contacts, err := client.GetContacts(context.Background(), &ContactQuery{
 			ID: testContactID,
 		})
@@ -78,10 +53,8 @@ func TestClient_GetContacts(t *testing.T) {
 	})
 
 	t.Run("bad request response", func(t *testing.T) {
-		// Create a client
-		client := newTestClient(&mockHTTPGetContacts{})
+		client := newTestClient(mockGetContacts())
 
-		// Create a req
 		contact, err := client.GetContacts(context.Background(), &ContactQuery{
 			ID: testContactIDBadRequest,
 		})
@@ -90,10 +63,8 @@ func TestClient_GetContacts(t *testing.T) {
 	})
 
 	t.Run("unauthorized response", func(t *testing.T) {
-		// Create a client
-		client := newTestClient(&mockHTTPGetContacts{})
+		client := newTestClient(mockGetContacts())
 
-		// Create a req
 		contact, err := client.GetContacts(context.Background(), &ContactQuery{
 			ID: testContactIDUnauthorized,
 		})
@@ -102,10 +73,8 @@ func TestClient_GetContacts(t *testing.T) {
 	})
 
 	t.Run("bad json response", func(t *testing.T) {
-		// Create a client
-		client := newTestClient(&mockHTTPGetContacts{})
+		client := newTestClient(mockGetContacts())
 
-		// Create a req
 		contact, err := client.GetContacts(context.Background(), &ContactQuery{
 			ID: testContactIDBadJSON,
 		})
@@ -119,20 +88,16 @@ func TestClient_GetContactsRaw(t *testing.T) {
 	t.Parallel()
 
 	t.Run("invalid query", func(t *testing.T) {
-		// Create a client
-		client := newTestClient(&mockHTTPGetContacts{})
+		client := newTestClient(mockGetContacts())
 
-		// Create a req
 		response, err := client.GetContactsRaw(context.Background(), &ContactQuery{})
 		assert.Nil(t, response)
 		assert.Error(t, err)
 	})
 
 	t.Run("get a valid contact by id", func(t *testing.T) {
-		// Create a client
-		client := newTestClient(&mockHTTPGetContacts{})
+		client := newTestClient(mockGetContacts())
 
-		// Create a req
 		response, err := client.GetContactsRaw(context.Background(), &ContactQuery{
 			ID: testContactID,
 		})
@@ -224,7 +189,7 @@ func TestContactQuery_BuildURL(t *testing.T) {
 
 // BenchmarkClient_GetContacts benchmarks the GetContacts method
 func BenchmarkClient_GetContacts(b *testing.B) {
-	client := newTestClient(&mockHTTPCreateContact{})
+	client := newTestClient(mockCreateContact())
 	fields := &ContactQuery{
 		ID: testContactID,
 	}
@@ -233,9 +198,9 @@ func BenchmarkClient_GetContacts(b *testing.B) {
 	}
 }
 
-// BenchmarkClient_GetContacts benchmarks the GetContactsRaw method
+// BenchmarkClient_GetContactsRaw benchmarks the GetContactsRaw method
 func BenchmarkClient_GetContactsRaw(b *testing.B) {
-	client := newTestClient(&mockHTTPCreateContact{})
+	client := newTestClient(mockCreateContact())
 	fields := &ContactQuery{
 		ID: testContactID,
 	}

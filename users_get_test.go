@@ -1,9 +1,7 @@
 package drift
 
 import (
-	"bytes"
 	"context"
-	"io"
 	"net/http"
 	"testing"
 
@@ -22,61 +20,25 @@ const (
 	testUserPhone          = "555-123-4567"
 )
 
-// mockHTTPGetUser for mocking requests
-type mockHTTPGetUser struct{}
-
-// Do is a mock http request
-func (m *mockHTTPGetUser) Do(req *http.Request) (*http.Response, error) {
-	resp := new(http.Response)
-	resp.StatusCode = http.StatusBadRequest
-
-	if req == nil {
-		return resp, errMissingRequest
-	}
-
-	// Single user by ID
-	if req.URL.String() == apiEndpoint+"/users/228225" {
-		resp.StatusCode = http.StatusOK
-		resp.Body = io.NopCloser(bytes.NewBufferString(`{"data":{"id":228225,"orgId":12345,"name":"Test User","alias":"tuser","email":"testuser@example.com","phone":"555-123-4567","locale":"en-US","availability":"AVAILABLE","role":"admin","timeZone":"America/New_York","avatarUrl":"https://example.com/avatar.png","verified":true,"bot":false,"createdAt":1606273669631,"updatedAt":1614550516644}}`))
-	} else if req.URL.String() == apiEndpoint+"/users/111111" {
-		resp.StatusCode = http.StatusBadRequest
-		resp.Body = io.NopCloser(nil)
-	} else if req.URL.String() == apiEndpoint+"/users/222222" {
-		resp.StatusCode = http.StatusUnauthorized
-		resp.Body = io.NopCloser(nil)
-	} else if req.URL.String() == apiEndpoint+"/users/333333" {
-		resp.StatusCode = http.StatusOK
-		resp.Body = io.NopCloser(bytes.NewBufferString(`{"data":{"id":333333"name":"Bad JSON"}`))
-	}
-
-	return resp, nil
+// mockGetUser returns a multi-route mock for user GET operations
+func mockGetUser() *mockHTTPMulti {
+	return newMockHTTPMulti().
+		addRoute(apiEndpoint+"/users/228225", http.StatusOK,
+			`{"data":{"id":228225,"orgId":12345,"name":"Test User","alias":"tuser","email":"testuser@example.com","phone":"555-123-4567","locale":"en-US","availability":"AVAILABLE","role":"admin","timeZone":"America/New_York","avatarUrl":"https://example.com/avatar.png","verified":true,"bot":false,"createdAt":1606273669631,"updatedAt":1614550516644}}`).
+		addRoute(apiEndpoint+"/users/111111", http.StatusBadRequest, "").
+		addRoute(apiEndpoint+"/users/222222", http.StatusUnauthorized, "").
+		addRoute(apiEndpoint+"/users/333333", http.StatusOK,
+			`{"data":{"id":333333"name":"Bad JSON"}}`)
 }
 
-// mockHTTPGetUsers for mocking multiple user requests
-type mockHTTPGetUsers struct{}
-
-// Do is a mock http request
-func (m *mockHTTPGetUsers) Do(req *http.Request) (*http.Response, error) {
-	resp := new(http.Response)
-	resp.StatusCode = http.StatusBadRequest
-
-	if req == nil {
-		return resp, errMissingRequest
-	}
-
-	// Multiple users by IDs
-	if req.URL.String() == apiEndpoint+"/users?userId=228225&userId=243266" {
-		resp.StatusCode = http.StatusOK
-		resp.Body = io.NopCloser(bytes.NewBufferString(`{"data":{"228225":{"id":228225,"orgId":12345,"name":"Test User","email":"testuser@example.com","availability":"AVAILABLE","role":"admin","verified":true,"bot":false,"createdAt":1606273669631,"updatedAt":1614550516644},"243266":{"id":243266,"orgId":12345,"name":"Second User","email":"second@example.com","availability":"OFFLINE","role":"member","verified":true,"bot":false,"createdAt":1606273669631,"updatedAt":1614550516644}}}`))
-	} else if req.URL.String() == apiEndpoint+"/users?userId=111111" {
-		resp.StatusCode = http.StatusBadRequest
-		resp.Body = io.NopCloser(nil)
-	} else if req.URL.String() == apiEndpoint+"/users?userId=333333" {
-		resp.StatusCode = http.StatusOK
-		resp.Body = io.NopCloser(bytes.NewBufferString(`{"data":{"333333":{"id":333333"name":"Bad JSON"}}}`))
-	}
-
-	return resp, nil
+// mockGetUsers returns a multi-route mock for multiple user GET operations
+func mockGetUsers() *mockHTTPMulti {
+	return newMockHTTPMulti().
+		addRoute(apiEndpoint+"/users?userId=228225&userId=243266", http.StatusOK,
+			`{"data":{"228225":{"id":228225,"orgId":12345,"name":"Test User","email":"testuser@example.com","availability":"AVAILABLE","role":"admin","verified":true,"bot":false,"createdAt":1606273669631,"updatedAt":1614550516644},"243266":{"id":243266,"orgId":12345,"name":"Second User","email":"second@example.com","availability":"OFFLINE","role":"member","verified":true,"bot":false,"createdAt":1606273669631,"updatedAt":1614550516644}}}`).
+		addRoute(apiEndpoint+"/users?userId=111111", http.StatusBadRequest, "").
+		addRoute(apiEndpoint+"/users?userId=333333", http.StatusOK,
+			`{"data":{"333333":{"id":333333"name":"Bad JSON"}}}`)
 }
 
 // TestClient_GetUser tests the method GetUser()
@@ -84,7 +46,7 @@ func TestClient_GetUser(t *testing.T) {
 	t.Parallel()
 
 	t.Run("get a valid user by id", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetUser{})
+		client := newTestClient(mockGetUser())
 
 		user, err := client.GetUser(context.Background(), testUserID)
 		require.NoError(t, err)
@@ -110,7 +72,7 @@ func TestClient_GetUser(t *testing.T) {
 	})
 
 	t.Run("missing user id", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetUser{})
+		client := newTestClient(mockGetUser())
 
 		user, err := client.GetUser(context.Background(), 0)
 		require.Error(t, err)
@@ -119,7 +81,7 @@ func TestClient_GetUser(t *testing.T) {
 	})
 
 	t.Run("bad request response", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetUser{})
+		client := newTestClient(mockGetUser())
 
 		user, err := client.GetUser(context.Background(), testUserIDBadRequest)
 		require.Error(t, err)
@@ -127,7 +89,7 @@ func TestClient_GetUser(t *testing.T) {
 	})
 
 	t.Run("unauthorized response", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetUser{})
+		client := newTestClient(mockGetUser())
 
 		user, err := client.GetUser(context.Background(), testUserIDUnauthorized)
 		require.Error(t, err)
@@ -135,7 +97,7 @@ func TestClient_GetUser(t *testing.T) {
 	})
 
 	t.Run("bad json response", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetUser{})
+		client := newTestClient(mockGetUser())
 
 		user, err := client.GetUser(context.Background(), testUserIDBadJSON)
 		require.Error(t, err)
@@ -148,7 +110,7 @@ func TestClient_GetUserRaw(t *testing.T) {
 	t.Parallel()
 
 	t.Run("missing user id", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetUser{})
+		client := newTestClient(mockGetUser())
 
 		response, err := client.GetUserRaw(context.Background(), 0)
 		assert.Nil(t, response)
@@ -157,7 +119,7 @@ func TestClient_GetUserRaw(t *testing.T) {
 	})
 
 	t.Run("get a valid user by id", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetUser{})
+		client := newTestClient(mockGetUser())
 
 		response, err := client.GetUserRaw(context.Background(), testUserID)
 		assert.NotNil(t, response)
@@ -175,7 +137,7 @@ func TestClient_GetUsers(t *testing.T) {
 	t.Parallel()
 
 	t.Run("get multiple valid users", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetUsers{})
+		client := newTestClient(mockGetUsers())
 
 		users, err := client.GetUsers(context.Background(), []uint64{228225, 243266})
 		require.NoError(t, err)
@@ -184,7 +146,7 @@ func TestClient_GetUsers(t *testing.T) {
 	})
 
 	t.Run("missing user ids", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetUsers{})
+		client := newTestClient(mockGetUsers())
 
 		users, err := client.GetUsers(context.Background(), []uint64{})
 		require.Error(t, err)
@@ -193,7 +155,7 @@ func TestClient_GetUsers(t *testing.T) {
 	})
 
 	t.Run("too many user ids", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetUsers{})
+		client := newTestClient(mockGetUsers())
 
 		// Create 21 user IDs
 		userIDs := make([]uint64, 21)
@@ -208,7 +170,7 @@ func TestClient_GetUsers(t *testing.T) {
 	})
 
 	t.Run("bad request response", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetUsers{})
+		client := newTestClient(mockGetUsers())
 
 		users, err := client.GetUsers(context.Background(), []uint64{111111})
 		require.Error(t, err)
@@ -216,7 +178,7 @@ func TestClient_GetUsers(t *testing.T) {
 	})
 
 	t.Run("bad json response", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetUsers{})
+		client := newTestClient(mockGetUsers())
 
 		users, err := client.GetUsers(context.Background(), []uint64{333333})
 		require.Error(t, err)
@@ -229,7 +191,7 @@ func TestClient_GetUsersRaw(t *testing.T) {
 	t.Parallel()
 
 	t.Run("missing user ids", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetUsers{})
+		client := newTestClient(mockGetUsers())
 
 		response, err := client.GetUsersRaw(context.Background(), []uint64{})
 		assert.Nil(t, response)
@@ -238,7 +200,7 @@ func TestClient_GetUsersRaw(t *testing.T) {
 	})
 
 	t.Run("too many user ids", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetUsers{})
+		client := newTestClient(mockGetUsers())
 
 		userIDs := make([]uint64, 21)
 		for i := range userIDs {
@@ -252,7 +214,7 @@ func TestClient_GetUsersRaw(t *testing.T) {
 	})
 
 	t.Run("get multiple valid users", func(t *testing.T) {
-		client := newTestClient(&mockHTTPGetUsers{})
+		client := newTestClient(mockGetUsers())
 
 		response, err := client.GetUsersRaw(context.Background(), []uint64{228225, 243266})
 		assert.NotNil(t, response)
@@ -267,7 +229,7 @@ func TestClient_GetUsersRaw(t *testing.T) {
 
 // BenchmarkClient_GetUser benchmarks the GetUser method
 func BenchmarkClient_GetUser(b *testing.B) {
-	client := newTestClient(&mockHTTPGetUser{})
+	client := newTestClient(mockGetUser())
 	for i := 0; i < b.N; i++ {
 		_, _ = client.GetUser(context.Background(), testUserID)
 	}
@@ -275,7 +237,7 @@ func BenchmarkClient_GetUser(b *testing.B) {
 
 // BenchmarkClient_GetUserRaw benchmarks the GetUserRaw method
 func BenchmarkClient_GetUserRaw(b *testing.B) {
-	client := newTestClient(&mockHTTPGetUser{})
+	client := newTestClient(mockGetUser())
 	for i := 0; i < b.N; i++ {
 		_, _ = client.GetUserRaw(context.Background(), testUserID)
 	}
@@ -283,7 +245,7 @@ func BenchmarkClient_GetUserRaw(b *testing.B) {
 
 // BenchmarkClient_GetUsers benchmarks the GetUsers method
 func BenchmarkClient_GetUsers(b *testing.B) {
-	client := newTestClient(&mockHTTPGetUsers{})
+	client := newTestClient(mockGetUsers())
 	userIDs := []uint64{228225, 243266}
 	for i := 0; i < b.N; i++ {
 		_, _ = client.GetUsers(context.Background(), userIDs)
@@ -292,7 +254,7 @@ func BenchmarkClient_GetUsers(b *testing.B) {
 
 // BenchmarkClient_GetUsersRaw benchmarks the GetUsersRaw method
 func BenchmarkClient_GetUsersRaw(b *testing.B) {
-	client := newTestClient(&mockHTTPGetUsers{})
+	client := newTestClient(mockGetUsers())
 	userIDs := []uint64{228225, 243266}
 	for i := 0; i < b.N; i++ {
 		_, _ = client.GetUsersRaw(context.Background(), userIDs)

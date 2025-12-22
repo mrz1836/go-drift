@@ -18,7 +18,7 @@ func (c *Client) UpdateUser(ctx context.Context, userID uint64,
 	}
 
 	user = new(User)
-	if err = json.Unmarshal(response.BodyContents, &user); err != nil {
+	if err = response.UnmarshalTo(&user); err != nil {
 		return nil, err
 	}
 

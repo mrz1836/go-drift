@@ -2,7 +2,6 @@ package drift
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 )
 
@@ -33,7 +32,7 @@ func (c *Client) ListCustomAttributes(ctx context.Context) (response *CustomAttr
 	}
 
 	// Parse the response
-	err = json.Unmarshal(reqResponse.BodyContents, &response)
+	err = reqResponse.UnmarshalTo(&response)
 	return response, err
 }
 

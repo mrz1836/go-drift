@@ -1,9 +1,7 @@
 package drift
 
 import (
-	"bytes"
 	"context"
-	"io"
 	"net/http"
 	"testing"
 
@@ -11,85 +9,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockHTTPListUsers for mocking requests
-type mockHTTPListUsers struct{}
-
-// Do is a mock http request
-func (m *mockHTTPListUsers) Do(req *http.Request) (*http.Response, error) {
-	resp := new(http.Response)
-	resp.StatusCode = http.StatusBadRequest
-
-	if req == nil {
-		return resp, errMissingRequest
-	}
-
-	// List users endpoint
-	if req.URL.String() == apiEndpoint+"/users/list" {
-		resp.StatusCode = http.StatusOK
-		resp.Body = io.NopCloser(bytes.NewBufferString(`{"data":[{"id":228225,"orgId":12345,"name":"Test User","alias":"tuser","email":"testuser@example.com","phone":"555-123-4567","locale":"en-US","availability":"AVAILABLE","role":"admin","timeZone":"America/New_York","avatarUrl":"https://example.com/avatar.png","verified":true,"bot":false,"createdAt":1606273669631,"updatedAt":1614550516644},{"id":243266,"orgId":12345,"name":"Second User","email":"second@example.com","availability":"OFFLINE","role":"member","verified":true,"bot":false,"createdAt":1606273669631,"updatedAt":1614550516644}]}`))
-	}
-
-	return resp, nil
+// mockListUsers returns a mock for user list operations
+func mockListUsers() *mockHTTP {
+	return newMockHTTP(
+		withStatus(http.StatusOK),
+		withBody(`{"data":[{"id":228225,"orgId":12345,"name":"Test User","alias":"tuser","email":"testuser@example.com","phone":"555-123-4567","locale":"en-US","availability":"AVAILABLE","role":"admin","timeZone":"America/New_York","avatarUrl":"https://example.com/avatar.png","verified":true,"bot":false,"createdAt":1606273669631,"updatedAt":1614550516644},{"id":243266,"orgId":12345,"name":"Second User","email":"second@example.com","availability":"OFFLINE","role":"member","verified":true,"bot":false,"createdAt":1606273669631,"updatedAt":1614550516644}]}`),
+	)
 }
 
-// mockHTTPListUsersEmpty for mocking empty response
-type mockHTTPListUsersEmpty struct{}
-
-// Do is a mock http request
-func (m *mockHTTPListUsersEmpty) Do(req *http.Request) (*http.Response, error) {
-	resp := new(http.Response)
-	resp.StatusCode = http.StatusBadRequest
-
-	if req == nil {
-		return resp, errMissingRequest
-	}
-
-	if req.URL.String() == apiEndpoint+"/users/list" {
-		resp.StatusCode = http.StatusOK
-		resp.Body = io.NopCloser(bytes.NewBufferString(`{"data":[]}`))
-	}
-
-	return resp, nil
-}
-
-// mockHTTPListUsersUnauthorized for mocking unauthorized response
-type mockHTTPListUsersUnauthorized struct{}
-
-// Do is a mock http request
-func (m *mockHTTPListUsersUnauthorized) Do(req *http.Request) (*http.Response, error) {
-	resp := new(http.Response)
-	resp.StatusCode = http.StatusBadRequest
-
-	if req == nil {
-		return resp, errMissingRequest
-	}
-
-	if req.URL.String() == apiEndpoint+"/users/list" {
-		resp.StatusCode = http.StatusUnauthorized
-		resp.Body = io.NopCloser(nil)
-	}
-
-	return resp, nil
-}
-
-// mockHTTPListUsersBadJSON for mocking bad JSON response
-type mockHTTPListUsersBadJSON struct{}
-
-// Do is a mock http request
-func (m *mockHTTPListUsersBadJSON) Do(req *http.Request) (*http.Response, error) {
-	resp := new(http.Response)
-	resp.StatusCode = http.StatusBadRequest
-
-	if req == nil {
-		return resp, errMissingRequest
-	}
-
-	if req.URL.String() == apiEndpoint+"/users/list" {
-		resp.StatusCode = http.StatusOK
-		resp.Body = io.NopCloser(bytes.NewBufferString(`{"data":[{"id":228225"name":"Bad JSON"}]}`))
-	}
-
-	return resp, nil
+// mockListUsersEmpty returns a mock for empty user list
+func mockListUsersEmpty() *mockHTTP {
+	return newMockHTTP(
+		withStatus(http.StatusOK),
+		withBody(`{"data":[]}`),
+	)
 }
 
 // TestClient_ListUsers tests the method ListUsers()
@@ -97,7 +30,7 @@ func TestClient_ListUsers(t *testing.T) {
 	t.Parallel()
 
 	t.Run("list all users", func(t *testing.T) {
-		client := newTestClient(&mockHTTPListUsers{})
+		client := newTestClient(mockListUsers())
 
 		users, err := client.ListUsers(context.Background())
 		require.NoError(t, err)
@@ -118,7 +51,7 @@ func TestClient_ListUsers(t *testing.T) {
 	})
 
 	t.Run("empty user list", func(t *testing.T) {
-		client := newTestClient(&mockHTTPListUsersEmpty{})
+		client := newTestClient(mockListUsersEmpty())
 
 		users, err := client.ListUsers(context.Background())
 		require.NoError(t, err)
@@ -127,7 +60,7 @@ func TestClient_ListUsers(t *testing.T) {
 	})
 
 	t.Run("unauthorized response", func(t *testing.T) {
-		client := newTestClient(&mockHTTPListUsersUnauthorized{})
+		client := newTestClient(newMockError(http.StatusUnauthorized))
 
 		users, err := client.ListUsers(context.Background())
 		require.Error(t, err)
@@ -135,7 +68,7 @@ func TestClient_ListUsers(t *testing.T) {
 	})
 
 	t.Run("bad json response", func(t *testing.T) {
-		client := newTestClient(&mockHTTPListUsersBadJSON{})
+		client := newTestClient(newMockSuccess(`{"data":[{"id":228225"name":"Bad JSON"}]}`))
 
 		users, err := client.ListUsers(context.Background())
 		require.Error(t, err)
@@ -148,7 +81,7 @@ func TestClient_ListUsersRaw(t *testing.T) {
 	t.Parallel()
 
 	t.Run("list all users raw", func(t *testing.T) {
-		client := newTestClient(&mockHTTPListUsers{})
+		client := newTestClient(mockListUsers())
 
 		response, err := client.ListUsersRaw(context.Background())
 		assert.NotNil(t, response)
@@ -161,7 +94,7 @@ func TestClient_ListUsersRaw(t *testing.T) {
 	})
 
 	t.Run("unauthorized response", func(t *testing.T) {
-		client := newTestClient(&mockHTTPListUsersUnauthorized{})
+		client := newTestClient(newMockError(http.StatusUnauthorized))
 
 		response, err := client.ListUsersRaw(context.Background())
 		require.Error(t, err)
@@ -172,7 +105,7 @@ func TestClient_ListUsersRaw(t *testing.T) {
 
 // BenchmarkClient_ListUsers benchmarks the ListUsers method
 func BenchmarkClient_ListUsers(b *testing.B) {
-	client := newTestClient(&mockHTTPListUsers{})
+	client := newTestClient(mockListUsers())
 	for i := 0; i < b.N; i++ {
 		_, _ = client.ListUsers(context.Background())
 	}
@@ -180,7 +113,7 @@ func BenchmarkClient_ListUsers(b *testing.B) {
 
 // BenchmarkClient_ListUsersRaw benchmarks the ListUsersRaw method
 func BenchmarkClient_ListUsersRaw(b *testing.B) {
-	client := newTestClient(&mockHTTPListUsers{})
+	client := newTestClient(mockListUsers())
 	for i := 0; i < b.N; i++ {
 		_, _ = client.ListUsersRaw(context.Background())
 	}

@@ -1,10 +1,8 @@
 package drift
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"io"
 	"net/http"
 	"testing"
 
@@ -14,44 +12,12 @@ import (
 
 var errMissingRequest = errors.New("missing request")
 
-// mockHTTPCreateContact for mocking requests
-type mockHTTPCreateContact struct{}
-
-// Do is a mock http request
-func (m *mockHTTPCreateContact) Do(req *http.Request) (*http.Response, error) {
-	resp := new(http.Response)
-	resp.StatusCode = http.StatusBadRequest
-
-	// No req found
-	if req == nil {
-		return resp, errMissingRequest
-	}
-
-	// Valid response
-	if req.URL.String() == apiEndpoint+"/contacts" {
-		resp.StatusCode = http.StatusOK
-		resp.Body = io.NopCloser(bytes.NewBufferString(`{"data":{"id":` + testContactID + `,"createdAt":1614563742010,"attributes":{"_END_USER_VERSION":3,"_end_user_version":3,"_calculated_version":3,"socialProfiles":{},"name":"` + testContactName + `","email":"` + testContactEmail + `","events":{},"tags":[],"start_date":1614563742010}}}`))
-	}
-
-	// Default is valid
-	return resp, nil
-}
-
-// mockHTTPCreateContactError for testing error scenarios
-type mockHTTPCreateContactError struct {
-	statusCode int
-	body       string
-}
-
-// Do returns a configurable error response
-func (m *mockHTTPCreateContactError) Do(req *http.Request) (*http.Response, error) {
-	if req == nil {
-		return nil, errMissingRequest
-	}
-	return &http.Response{
-		StatusCode: m.statusCode,
-		Body:       io.NopCloser(bytes.NewBufferString(m.body)),
-	}, nil
+// mockCreateContact returns a mock for contact creation operations
+func mockCreateContact() *mockHTTP {
+	return newMockHTTP(
+		withStatus(http.StatusOK),
+		withBody(`{"data":{"id":`+testContactID+`,"createdAt":1614563742010,"attributes":{"_END_USER_VERSION":3,"_end_user_version":3,"_calculated_version":3,"socialProfiles":{},"name":"`+testContactName+`","email":"`+testContactEmail+`","events":{},"tags":[],"start_date":1614563742010}}}`),
+	)
 }
 
 // TestClient_CreateContact tests the method CreateContact()
@@ -59,10 +25,8 @@ func TestClient_CreateContact(t *testing.T) {
 	t.Parallel()
 
 	t.Run("create a standard contact", func(t *testing.T) {
-		// Create a client
-		client := newTestClient(&mockHTTPCreateContact{})
+		client := newTestClient(mockCreateContact())
 
-		// Create a req
 		contact, err := client.CreateContact(
 			context.Background(),
 			&ContactFields{&StandardAttributes{
@@ -81,10 +45,7 @@ func TestClient_CreateContact(t *testing.T) {
 	})
 
 	t.Run("returns error when CreateContactRaw fails", func(t *testing.T) {
-		client := newTestClient(&mockHTTPCreateContactError{
-			statusCode: http.StatusBadRequest,
-			body:       "",
-		})
+		client := newTestClient(newMockError(http.StatusBadRequest))
 
 		contact, err := client.CreateContact(
 			context.Background(),
@@ -99,10 +60,7 @@ func TestClient_CreateContact(t *testing.T) {
 	})
 
 	t.Run("returns error on 401 unauthorized", func(t *testing.T) {
-		client := newTestClient(&mockHTTPCreateContactError{
-			statusCode: http.StatusUnauthorized,
-			body:       "",
-		})
+		client := newTestClient(newMockError(http.StatusUnauthorized))
 
 		contact, err := client.CreateContact(
 			context.Background(),
@@ -116,10 +74,7 @@ func TestClient_CreateContact(t *testing.T) {
 	})
 
 	t.Run("returns error on response unmarshal failure", func(t *testing.T) {
-		client := newTestClient(&mockHTTPCreateContactError{
-			statusCode: http.StatusOK,
-			body:       `{"data":{"invalid json`,
-		})
+		client := newTestClient(newMockSuccess(`{"data":{"invalid json`))
 
 		contact, err := client.CreateContact(
 			context.Background(),
@@ -137,7 +92,7 @@ func TestClient_CreateContactRaw(t *testing.T) {
 	t.Parallel()
 
 	t.Run("creates contact successfully", func(t *testing.T) {
-		client := newTestClient(&mockHTTPCreateContact{})
+		client := newTestClient(mockCreateContact())
 
 		response, err := client.CreateContactRaw(
 			context.Background(),
@@ -154,10 +109,7 @@ func TestClient_CreateContactRaw(t *testing.T) {
 	})
 
 	t.Run("returns error on HTTP failure", func(t *testing.T) {
-		client := newTestClient(&mockHTTPCreateContactError{
-			statusCode: http.StatusBadRequest,
-			body:       "",
-		})
+		client := newTestClient(newMockError(http.StatusBadRequest))
 
 		response, err := client.CreateContactRaw(
 			context.Background(),
@@ -173,7 +125,7 @@ func TestClient_CreateContactRaw(t *testing.T) {
 
 // BenchmarkClient_CreateContact benchmarks the CreateContact method
 func BenchmarkClient_CreateContact(b *testing.B) {
-	client := newTestClient(&mockHTTPCreateContact{})
+	client := newTestClient(mockCreateContact())
 	fields := &ContactFields{&StandardAttributes{
 		Email: testContactEmail,
 		Name:  testContactName,
