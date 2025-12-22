@@ -111,8 +111,8 @@ extra baggage.
 		- [x] Creating a Contact
 		- [x] Updating a Contact
 		- [x] Retrieving Contacts
-		- [ ] Deleting a Contact
-		- [ ] Unsubscribe Contacts from Emails
+		- [x] Deleting a Contact
+		- [x] Unsubscribe Contacts from Emails
 		- [x] Posting Timeline Events
 		- [ ] Listing Custom Attributes
 	- [ ] Users API
