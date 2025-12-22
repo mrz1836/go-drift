@@ -115,11 +115,11 @@ extra baggage.
 		- [x] Unsubscribe Contacts from Emails
 		- [x] Posting Timeline Events
 		- [x] Listing Custom Attributes
-	- [ ] Users API
-		- [ ] Retrieving User
-		- [ ] Listing Users
-		- [ ] Updating a User
-		- [ ] Get Booked Meetings
+	- [x] Users API
+		- [x] Retrieving User
+		- [x] Listing Users
+		- [x] Updating a User
+		- [x] Get Booked Meetings
 	- [ ] Conversations & Messages API
 		- [ ] Creating a Message
 		- [ ] Listing Conversations
