@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/mrz1836/go-drift"
+	"github.com/mrz1836/go-drift/drift"
 )
 
 func main() {

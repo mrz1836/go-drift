@@ -89,14 +89,14 @@
 
 **go-drift** requires a [supported release of Go](https://golang.org/doc/devel/release.html#policy).
 ```shell script
-go get -u github.com/mrz1836/go-drift
+go get -u github.com/mrz1836/go-drift/drift
 ```
 
 <br/>
 
 ## 📚 Documentation
 
-View the generated [documentation](https://pkg.go.dev/github.com/mrz1836/go-drift?tab=doc)
+View the generated [documentation](https://pkg.go.dev/github.com/mrz1836/go-drift/drift?tab=doc)
 
 > **Heads up!** `go-drift` is intentionally light on dependencies. The only
 external package it uses is the excellent `testify` suite—and that's just for
