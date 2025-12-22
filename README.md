@@ -114,7 +114,7 @@ extra baggage.
 		- [x] Deleting a Contact
 		- [x] Unsubscribe Contacts from Emails
 		- [x] Posting Timeline Events
-		- [ ] Listing Custom Attributes
+		- [x] Listing Custom Attributes
 	- [ ] Users API
 		- [ ] Retrieving User
 		- [ ] Listing Users
