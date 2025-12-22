@@ -120,30 +120,33 @@ extra baggage.
 		- [x] Listing Users
 		- [x] Updating a User
 		- [x] Get Booked Meetings
-	- [ ] Conversations & Messages API
-		- [ ] Creating a Message
-		- [ ] Listing Conversations
-		- [ ] Retrieving a Conversation
-		- [ ] Retrieving a Conversation's Messages
-		- [ ] Retrieving a Conversation's Attachments
-		- [ ] Conversation Reporting
-		- [ ] Creating a new Conversation
-		- [ ] Bulk Conversation Statuses
-	- [ ] Accounts API
-		- [ ] Creating an Account
-		- [ ] Retrieving an account
-		- [ ] Listing Accounts
-		- [ ] Updating Accounts
-		- [ ] Deleting Accounts
-	- [ ] Playbooks API
-		- [ ] Retrieving Bot Playbooks
-		- [ ] Retrieving Conversational Landing Pages
-	- [ ] Admin API
-		- [ ] Trigger App Uninstall
-		- [ ] Get Token Information
-	- [ ] GDPR API
-		- [ ] GDPR Retrieval
-		- [ ] GDPR Deletion
+	- [x] Conversations & Messages API
+		- [x] Creating a Message
+		- [x] Listing Conversations
+		- [x] Retrieving a Conversation
+		- [x] Retrieving a Conversation's Messages
+		- [x] Retrieving a Conversation's Transcript
+		- [x] Retrieving a Conversation's Attachments
+		- [x] Creating a new Conversation
+		- [x] Bulk Conversation Statuses
+	- [x] Accounts API
+		- [x] Creating an Account
+		- [x] Retrieving an account
+		- [x] Listing Accounts
+		- [x] Updating Accounts
+		- [x] Deleting Accounts
+	- [x] Teams API
+		- [x] Listing Teams (Org)
+		- [x] Listing Teams by User
+	- [x] Playbooks API
+		- [x] Retrieving Bot Playbooks
+		- [x] Retrieving Conversational Landing Pages
+	- [x] Admin API
+		- [x] Trigger App Uninstall
+		- [x] Get Token Information
+	- [x] GDPR API
+		- [x] GDPR Retrieval
+		- [x] GDPR Deletion
 
 <br>
 
