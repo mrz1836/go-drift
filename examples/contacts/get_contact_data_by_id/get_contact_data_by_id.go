@@ -22,10 +22,10 @@ func main() {
 		},
 	)
 	if err != nil {
-		log.Fatal("failed: ", data.Error.Error())
+		log.Fatal("failed: ", data.Error.Error()) //nolint:gosec // G706: example code, values from trusted API response
 		return
 	}
 
 	// See the raw contact data
-	log.Println(string(data.BodyContents))
+	log.Println(string(data.BodyContents)) //nolint:gosec // G706: example code, values from trusted API response
 }

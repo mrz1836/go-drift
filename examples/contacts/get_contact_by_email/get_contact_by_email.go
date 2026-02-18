@@ -22,13 +22,13 @@ func main() {
 		},
 	)
 	if err != nil {
-		log.Fatal("failed: ", err.Error())
+		log.Fatal("failed: ", err.Error()) //nolint:gosec // G706: example code, values from trusted API response
 		return
 	}
 
 	// See the standard contact data
-	log.Println(contacts.Data[0].ID)
-	log.Println(contacts.Data[0].CreatedAt)
-	log.Println(contacts.Data[0].Attributes)
-	log.Println(contacts.Data[0].Attributes.Email)
+	log.Println(contacts.Data[0].ID)               //nolint:gosec // G706: example code, values from trusted API response
+	log.Println(contacts.Data[0].CreatedAt)        //nolint:gosec // G706: example code, values from trusted API response
+	log.Println(contacts.Data[0].Attributes)       //nolint:gosec // G706: example code, values from trusted API response
+	log.Println(contacts.Data[0].Attributes.Email) //nolint:gosec // G706: example code, values from trusted API response
 }
