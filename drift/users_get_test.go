@@ -160,7 +160,7 @@ func TestClient_GetUsers(t *testing.T) {
 		// Create 21 user IDs
 		userIDs := make([]uint64, 21)
 		for i := range userIDs {
-			userIDs[i] = uint64(i) + 1 //nolint:gosec // test code, no overflow risk
+			userIDs[i] = uint64(i) + 1
 		}
 
 		users, err := client.GetUsers(context.Background(), userIDs)
@@ -204,7 +204,7 @@ func TestClient_GetUsersRaw(t *testing.T) {
 
 		userIDs := make([]uint64, 21)
 		for i := range userIDs {
-			userIDs[i] = uint64(i) + 1 //nolint:gosec // test code, no overflow risk
+			userIDs[i] = uint64(i) + 1
 		}
 
 		response, err := client.GetUsersRaw(context.Background(), userIDs)
