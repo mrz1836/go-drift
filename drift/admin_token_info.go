@@ -33,7 +33,7 @@ func (c *Client) GetTokenInfoRaw(ctx context.Context, accessToken string) (*Requ
 		AccessToken: accessToken,
 	}
 
-	data, err := json.Marshal(requestBody)
+	data, err := json.Marshal(requestBody) //nolint:gosec // G117: marshaling struct with OAuth token field by design
 	if err != nil {
 		return nil, err
 	}
