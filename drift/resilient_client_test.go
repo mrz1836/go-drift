@@ -229,6 +229,7 @@ func TestResilientClientDoRespectsContextCancellation(t *testing.T) {
 	)
 
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://example.com", nil)
 	require.NoError(t, err)
