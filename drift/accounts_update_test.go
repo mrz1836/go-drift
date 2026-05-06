@@ -9,11 +9,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const testUpdatedCompanyName = "Updated Company"
+
 // mockUpdateAccount returns a mock for account update operations
 func mockUpdateAccount() *mockHTTP {
 	return newMockHTTP(
 		withStatus(http.StatusOK),
-		withBody(`{"data":{"accountId":"`+testAccountID+`","ownerId":21965,"name":"Updated Company","domain":"`+testAccountDomain+`","deleted":false,"targeted":true,"createDateTime":1614563742010,"updateDateTime":1614563742020}}`),
+		withBody(`{"data":{"accountId":"`+testAccountID+`","ownerId":21965,"name":"`+testUpdatedCompanyName+`","domain":"`+testAccountDomain+`","deleted":false,"targeted":true,"createDateTime":1614563742010,"updateDateTime":1614563742020}}`),
 	)
 }
 
@@ -29,7 +31,7 @@ func TestClient_UpdateAccount(t *testing.T) {
 			&AccountFields{
 				AccountID: testAccountID,
 				OwnerID:   testAccountOwner,
-				Name:      "Updated Company",
+				Name:      testUpdatedCompanyName,
 				Domain:    testAccountDomain,
 				Targeted:  true,
 			})
@@ -38,7 +40,7 @@ func TestClient_UpdateAccount(t *testing.T) {
 
 		assert.Equal(t, testAccountID, account.Data.AccountID)
 		assert.Equal(t, testAccountOwner, account.Data.OwnerID)
-		assert.Equal(t, "Updated Company", account.Data.Name)
+		assert.Equal(t, testUpdatedCompanyName, account.Data.Name)
 		assert.Equal(t, testAccountDomain, account.Data.Domain)
 		assert.True(t, account.Data.Targeted)
 		assert.Equal(t, int64(1614563742020), account.Data.UpdateDateTime)
@@ -51,7 +53,7 @@ func TestClient_UpdateAccount(t *testing.T) {
 			context.Background(),
 			&AccountFields{
 				OwnerID: testAccountOwner,
-				Name:    "Updated Company",
+				Name:    testUpdatedCompanyName,
 			})
 
 		require.Error(t, err)
@@ -76,7 +78,7 @@ func TestClient_UpdateAccount(t *testing.T) {
 			context.Background(),
 			&AccountFields{
 				AccountID: testAccountID,
-				Name:      "Updated Company",
+				Name:      testUpdatedCompanyName,
 			})
 
 		require.Error(t, err)
@@ -92,7 +94,7 @@ func TestClient_UpdateAccount(t *testing.T) {
 			&AccountFields{
 				AccountID: testAccountID,
 				OwnerID:   testAccountOwner,
-				Name:      "Updated Company",
+				Name:      testUpdatedCompanyName,
 			})
 
 		require.Error(t, err)
@@ -108,7 +110,7 @@ func TestClient_UpdateAccount(t *testing.T) {
 			&AccountFields{
 				AccountID: testAccountID,
 				OwnerID:   testAccountOwner,
-				Name:      "Updated Company",
+				Name:      testUpdatedCompanyName,
 			})
 
 		require.Error(t, err)
@@ -124,7 +126,7 @@ func TestClient_UpdateAccount(t *testing.T) {
 			&AccountFields{
 				AccountID: testAccountID,
 				OwnerID:   testAccountOwner,
-				Name:      "Updated Company",
+				Name:      testUpdatedCompanyName,
 			})
 
 		require.Error(t, err)
@@ -144,7 +146,7 @@ func TestClient_UpdateAccountRaw(t *testing.T) {
 			&AccountFields{
 				AccountID: testAccountID,
 				OwnerID:   testAccountOwner,
-				Name:      "Updated Company",
+				Name:      testUpdatedCompanyName,
 				Domain:    testAccountDomain,
 				Targeted:  true,
 			})
@@ -164,7 +166,7 @@ func TestClient_UpdateAccountRaw(t *testing.T) {
 			context.Background(),
 			&AccountFields{
 				OwnerID: testAccountOwner,
-				Name:    "Updated Company",
+				Name:    testUpdatedCompanyName,
 			})
 
 		require.Error(t, err)
@@ -179,7 +181,7 @@ func TestClient_UpdateAccountRaw(t *testing.T) {
 			context.Background(),
 			&AccountFields{
 				AccountID: testAccountID,
-				Name:      "Updated Company",
+				Name:      testUpdatedCompanyName,
 			})
 
 		require.Error(t, err)
@@ -195,7 +197,7 @@ func TestClient_UpdateAccountRaw(t *testing.T) {
 			&AccountFields{
 				AccountID: testAccountID,
 				OwnerID:   testAccountOwner,
-				Name:      "Updated Company",
+				Name:      testUpdatedCompanyName,
 			})
 
 		require.Error(t, err)
@@ -210,7 +212,7 @@ func BenchmarkClient_UpdateAccount(b *testing.B) {
 	fields := &AccountFields{
 		AccountID: testAccountID,
 		OwnerID:   testAccountOwner,
-		Name:      "Updated Company",
+		Name:      testUpdatedCompanyName,
 		Domain:    testAccountDomain,
 		Targeted:  true,
 	}

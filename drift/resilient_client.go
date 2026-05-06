@@ -67,7 +67,7 @@ func (rc *ResilientClient) Do(req *http.Request) (*http.Response, error) {
 			return nil, err
 		}
 
-		resp, err := rc.client.Do(reqToSend) //nolint:gosec // G704: request originates from internal API calls, not user-controlled input
+		resp, err := rc.client.Do(reqToSend)
 
 		if !rc.shouldRetry(err, resp) {
 			return resp, err
