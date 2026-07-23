@@ -38,7 +38,8 @@ func TestClient_CreateAccount(t *testing.T) {
 				Name:     testAccountName,
 				Domain:   testAccountDomain,
 				Targeted: true,
-			})
+			},
+		)
 		require.NoError(t, err)
 		assert.NotNil(t, account)
 
@@ -59,7 +60,8 @@ func TestClient_CreateAccount(t *testing.T) {
 			&AccountFields{
 				OwnerID: testAccountOwner,
 				Name:    testAccountName,
-			})
+			},
+		)
 
 		require.Error(t, err)
 		assert.Nil(t, account)
@@ -74,7 +76,8 @@ func TestClient_CreateAccount(t *testing.T) {
 			&AccountFields{
 				OwnerID: testAccountOwner,
 				Name:    testAccountName,
-			})
+			},
+		)
 
 		require.Error(t, err)
 		assert.Nil(t, account)
@@ -89,7 +92,8 @@ func TestClient_CreateAccount(t *testing.T) {
 			&AccountFields{
 				OwnerID: testAccountOwner,
 				Domain:  testAccountDomain,
-			})
+			},
+		)
 
 		require.Error(t, err)
 		assert.Nil(t, account)
@@ -104,7 +108,8 @@ func TestClient_CreateAccount(t *testing.T) {
 			&AccountFields{
 				OwnerID: testAccountOwner,
 				Name:    testAccountName,
-			})
+			},
+		)
 
 		require.Error(t, err)
 		assert.Nil(t, account)
@@ -125,7 +130,8 @@ func TestClient_CreateAccountRaw(t *testing.T) {
 				Name:     testAccountName,
 				Domain:   testAccountDomain,
 				Targeted: true,
-			})
+			},
+		)
 
 		require.NoError(t, err)
 		assert.NotNil(t, response)
@@ -143,7 +149,8 @@ func TestClient_CreateAccountRaw(t *testing.T) {
 			&AccountFields{
 				OwnerID: testAccountOwner,
 				Name:    testAccountName,
-			})
+			},
+		)
 
 		require.Error(t, err)
 		assert.NotNil(t, response)
