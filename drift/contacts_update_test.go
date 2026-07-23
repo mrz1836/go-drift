@@ -33,7 +33,8 @@ func TestClient_UpdateContact(t *testing.T) {
 			context.Background(), id,
 			&ContactFields{&StandardAttributes{
 				Name: testContactName + "2",
-			}})
+			}},
+		)
 		require.NoError(t, err)
 		assert.NotNil(t, contact)
 
@@ -53,7 +54,8 @@ func TestClient_UpdateContact(t *testing.T) {
 			context.Background(), id,
 			&ContactFields{&StandardAttributes{
 				Name: testContactName,
-			}})
+			}},
+		)
 
 		require.Error(t, err)
 		assert.Nil(t, contact)
@@ -67,7 +69,8 @@ func TestClient_UpdateContact(t *testing.T) {
 			context.Background(), 999999,
 			&ContactFields{&StandardAttributes{
 				Name: testContactName,
-			}})
+			}},
+		)
 
 		require.Error(t, err)
 		assert.Nil(t, contact)
@@ -84,7 +87,8 @@ func TestClient_UpdateContact(t *testing.T) {
 			context.Background(), id,
 			&ContactFields{&StandardAttributes{
 				Name: testContactName,
-			}})
+			}},
+		)
 
 		require.Error(t, err)
 		assert.Nil(t, contact)
@@ -105,7 +109,8 @@ func TestClient_UpdateContactRaw(t *testing.T) {
 			context.Background(), id,
 			&ContactFields{&StandardAttributes{
 				Name: testContactName + "2",
-			}})
+			}},
+		)
 
 		require.NoError(t, err)
 		assert.NotNil(t, response)
@@ -124,7 +129,8 @@ func TestClient_UpdateContactRaw(t *testing.T) {
 			context.Background(), id,
 			&ContactFields{&StandardAttributes{
 				Name: testContactName,
-			}})
+			}},
+		)
 
 		require.Error(t, err)
 		assert.NotNil(t, response)
@@ -141,7 +147,8 @@ func TestClient_UpdateContactRaw(t *testing.T) {
 			context.Background(), id,
 			&ContactFields{&StandardAttributes{
 				Name: testContactName,
-			}})
+			}},
+		)
 
 		require.NoError(t, err)
 		assert.Contains(t, response.URL, "/contacts/"+testContactID)

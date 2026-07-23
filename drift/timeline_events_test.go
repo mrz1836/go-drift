@@ -33,7 +33,8 @@ func TestClient_CreateTimelineEvent(t *testing.T) {
 			context.Background(), &TimelineEvent{
 				ContactID: id,
 				Event:     testEventName,
-			})
+			},
+		)
 		require.NoError(t, err)
 		assert.NotNil(t, resp)
 
@@ -53,7 +54,8 @@ func TestClient_CreateTimelineEvent(t *testing.T) {
 			context.Background(), &TimelineEvent{
 				ContactID: id,
 				Event:     testEventName,
-			})
+			},
+		)
 
 		require.Error(t, err)
 		assert.Nil(t, resp)
@@ -70,7 +72,8 @@ func TestClient_CreateTimelineEvent(t *testing.T) {
 			context.Background(), &TimelineEvent{
 				ContactID: id,
 				Event:     testEventName,
-			})
+			},
+		)
 
 		require.Error(t, err)
 		assert.Nil(t, resp)
@@ -87,7 +90,8 @@ func TestClient_CreateTimelineEvent(t *testing.T) {
 			context.Background(), &TimelineEvent{
 				ContactID: id,
 				Event:     testEventName,
-			})
+			},
+		)
 
 		require.Error(t, err)
 		assert.Nil(t, resp)

@@ -33,7 +33,8 @@ func TestClient_CreateContact(t *testing.T) {
 				Email: testContactEmail,
 				Name:  testContactName,
 				Phone: testContactPhone,
-			}})
+			}},
+		)
 		require.NoError(t, err)
 		assert.NotNil(t, contact)
 
@@ -52,7 +53,8 @@ func TestClient_CreateContact(t *testing.T) {
 			&ContactFields{&StandardAttributes{
 				Email: testContactEmail,
 				Name:  testContactName,
-			}})
+			}},
+		)
 
 		require.Error(t, err)
 		assert.Nil(t, contact)
@@ -66,7 +68,8 @@ func TestClient_CreateContact(t *testing.T) {
 			context.Background(),
 			&ContactFields{&StandardAttributes{
 				Email: testContactEmail,
-			}})
+			}},
+		)
 
 		require.Error(t, err)
 		assert.Nil(t, contact)
@@ -80,7 +83,8 @@ func TestClient_CreateContact(t *testing.T) {
 			context.Background(),
 			&ContactFields{&StandardAttributes{
 				Email: testContactEmail,
-			}})
+			}},
+		)
 
 		require.Error(t, err)
 		assert.Nil(t, contact)
@@ -99,7 +103,8 @@ func TestClient_CreateContactRaw(t *testing.T) {
 			&ContactFields{&StandardAttributes{
 				Email: testContactEmail,
 				Name:  testContactName,
-			}})
+			}},
+		)
 
 		require.NoError(t, err)
 		assert.NotNil(t, response)
@@ -115,7 +120,8 @@ func TestClient_CreateContactRaw(t *testing.T) {
 			context.Background(),
 			&ContactFields{&StandardAttributes{
 				Email: testContactEmail,
-			}})
+			}},
+		)
 
 		require.Error(t, err)
 		assert.NotNil(t, response)

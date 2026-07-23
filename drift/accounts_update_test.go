@@ -34,7 +34,8 @@ func TestClient_UpdateAccount(t *testing.T) {
 				Name:      testUpdatedCompanyName,
 				Domain:    testAccountDomain,
 				Targeted:  true,
-			})
+			},
+		)
 		require.NoError(t, err)
 		assert.NotNil(t, account)
 
@@ -54,7 +55,8 @@ func TestClient_UpdateAccount(t *testing.T) {
 			&AccountFields{
 				OwnerID: testAccountOwner,
 				Name:    testUpdatedCompanyName,
-			})
+			},
+		)
 
 		require.Error(t, err)
 		assert.Nil(t, account)
@@ -79,7 +81,8 @@ func TestClient_UpdateAccount(t *testing.T) {
 			&AccountFields{
 				AccountID: testAccountID,
 				Name:      testUpdatedCompanyName,
-			})
+			},
+		)
 
 		require.Error(t, err)
 		assert.Nil(t, account)
@@ -95,7 +98,8 @@ func TestClient_UpdateAccount(t *testing.T) {
 				AccountID: testAccountID,
 				OwnerID:   testAccountOwner,
 				Name:      testUpdatedCompanyName,
-			})
+			},
+		)
 
 		require.Error(t, err)
 		assert.Nil(t, account)
@@ -111,7 +115,8 @@ func TestClient_UpdateAccount(t *testing.T) {
 				AccountID: testAccountID,
 				OwnerID:   testAccountOwner,
 				Name:      testUpdatedCompanyName,
-			})
+			},
+		)
 
 		require.Error(t, err)
 		assert.Nil(t, account)
@@ -127,7 +132,8 @@ func TestClient_UpdateAccount(t *testing.T) {
 				AccountID: testAccountID,
 				OwnerID:   testAccountOwner,
 				Name:      testUpdatedCompanyName,
-			})
+			},
+		)
 
 		require.Error(t, err)
 		assert.Nil(t, account)
@@ -149,7 +155,8 @@ func TestClient_UpdateAccountRaw(t *testing.T) {
 				Name:      testUpdatedCompanyName,
 				Domain:    testAccountDomain,
 				Targeted:  true,
-			})
+			},
+		)
 
 		require.NoError(t, err)
 		assert.NotNil(t, response)
@@ -167,7 +174,8 @@ func TestClient_UpdateAccountRaw(t *testing.T) {
 			&AccountFields{
 				OwnerID: testAccountOwner,
 				Name:    testUpdatedCompanyName,
-			})
+			},
+		)
 
 		require.Error(t, err)
 		assert.Nil(t, response)
@@ -182,7 +190,8 @@ func TestClient_UpdateAccountRaw(t *testing.T) {
 			&AccountFields{
 				AccountID: testAccountID,
 				Name:      testUpdatedCompanyName,
-			})
+			},
+		)
 
 		require.Error(t, err)
 		assert.Nil(t, response)
@@ -198,7 +207,8 @@ func TestClient_UpdateAccountRaw(t *testing.T) {
 				AccountID: testAccountID,
 				OwnerID:   testAccountOwner,
 				Name:      testUpdatedCompanyName,
-			})
+			},
+		)
 
 		require.Error(t, err)
 		assert.NotNil(t, response)
